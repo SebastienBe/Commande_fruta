@@ -248,14 +248,7 @@ main {
     min-height: 200px;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 var(--spacing-md);
-}
-
-/* Réduire le padding sur mobile */
-@media (max-width: 479px) {
-    .orders-section {
-        padding: 0; /* Pas de padding, géré par orders-grid */
-    }
+    padding: 0; /* Pas de padding, géré directement par orders-grid */
 }
 
 /* Loader */
@@ -320,6 +313,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-md);
+    padding: 0 var(--spacing-md); /* Padding uniquement sur le grid */
 }
 
 /* ===== FAB (Floating Action Button) ===== */

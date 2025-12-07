@@ -85,7 +85,7 @@
 /* ===== ORDER CARDS ===== */
 @media (max-width: 479px) {
     .orders-grid {
-        padding: var(--spacing-sm); /* 8px partout au lieu de 8px 16px */
+        padding: 0 var(--spacing-sm) var(--spacing-sm) var(--spacing-sm); /* 0 en haut, 8px ailleurs */
         gap: var(--spacing-sm);
     }
     
