@@ -146,9 +146,21 @@
     
     .card-btn {
         width: 100%;
-        min-height: var(--touch-target-min);
-        padding: var(--spacing-sm);
-        font-size: var(--font-size-sm);
+        min-height: 40px !important; /* Réduit de 48px à 40px pour mobile */
+        padding: var(--spacing-xs) var(--spacing-sm) !important;
+        font-size: 0.8rem !important;
+        letter-spacing: 0.3px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+    }
+    
+    /* Icônes dans les boutons sur mobile */
+    .card-btn .icon {
+        width: 1rem !important;
+        height: 1rem !important;
+        flex-shrink: 0;
     }
 }
 
@@ -282,8 +294,15 @@
     }
     
     .card-btn {
-        padding: var(--spacing-xs) var(--spacing-sm);
-        font-size: 0.75rem;
+        min-height: 36px !important; /* Encore plus petit sur très petits écrans */
+        padding: 6px var(--spacing-sm) !important;
+        font-size: 0.7rem !important;
+        gap: 4px !important;
+    }
+    
+    .card-btn .icon {
+        width: 0.875rem !important;
+        height: 0.875rem !important;
     }
 }
 

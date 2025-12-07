@@ -73,7 +73,7 @@ const DarkMode = {
         const theme = this.getCurrentTheme();
         
         if (icon) {
-            icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+            icon.innerHTML = theme === 'dark' ? Icons.get('sun', 'icon-lg') : Icons.get('moon', 'icon-lg');
         }
     },
     
@@ -86,8 +86,9 @@ const DarkMode = {
         button.id = 'darkModeToggle';
         button.className = 'dark-mode-toggle';
         button.setAttribute('aria-label', 'Changer de thème');
+        const currentTheme = this.getCurrentTheme();
         button.innerHTML = `
-            <span class="theme-icon">${this.getCurrentTheme() === 'dark' ? '☀️' : '🌙'}</span>
+            <span class="theme-icon">${currentTheme === 'dark' ? Icons.get('sun', 'icon-lg') : Icons.get('moon', 'icon-lg')}</span>
         `;
         
         button.addEventListener('click', () => this.toggle());

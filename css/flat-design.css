@@ -1,0 +1,406 @@
+/* ============================================
+   FLAT DESIGN - Style plat moderne avec SVG
+   ============================================ */
+
+/* ===== RESET OMBRES & DÉGRADÉS ===== */
+:root {
+    /* Ombres ultra-subtiles pour le flat design */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+    --shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+    
+    /* Couleurs flat plus vives */
+    --primary: #2ECC71;
+    --primary-dark: #27AE60;
+    --primary-light: #58D68D;
+    
+    --status-pending: #F39C12;
+    --status-ready: #3498DB;
+    --status-delivered: #2ECC71;
+    
+    --error: #E74C3C;
+    --warning: #F39C12;
+    --info: #3498DB;
+    --success: #2ECC71;
+    
+    /* Borders plus définies */
+    --border: #E0E0E0;
+    --border-focus: #2ECC71;
+}
+
+[data-theme="dark"] {
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+    --shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* ===== ICÔNES SVG ===== */
+.icon {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    stroke-width: 2;
+}
+
+.icon-xs { width: 0.875rem; height: 0.875rem; }
+.icon-sm { width: 1rem; height: 1rem; }
+.icon-md { width: 1.25rem; height: 1.25rem; }
+.icon-lg { width: 1.5rem; height: 1.5rem; }
+.icon-xl { width: 2rem; height: 2rem; }
+.icon-2xl { width: 2.5rem; height: 2.5rem; }
+.icon-3xl { width: 3rem; height: 3rem; }
+
+.icon-spin {
+    animation: icon-spin 1s linear infinite;
+}
+
+@keyframes icon-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Couleurs d'icônes */
+.icon-primary { color: var(--primary); }
+.icon-success { color: var(--success); }
+.icon-error { color: var(--error); }
+.icon-warning { color: var(--warning); }
+.icon-info { color: var(--info); }
+.icon-pending { color: var(--status-pending); }
+.icon-ready { color: var(--status-ready); }
+.icon-delivered { color: var(--status-delivered); }
+
+/* ===== BOUTONS FLAT ===== */
+.btn {
+    background: var(--primary) !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.875rem;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--spacing-xs) !important;
+}
+
+.btn:hover:not(:disabled) {
+    background: var(--primary-dark) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none !important;
+}
+
+.btn-secondary {
+    background: var(--bg-main) !important;
+    color: var(--text-primary) !important;
+    border: 2px solid var(--border) !important;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--bg-card) !important;
+    border-color: var(--primary) !important;
+}
+
+.btn-danger {
+    background: var(--error) !important;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #C0392B !important;
+}
+
+/* Icône dans bouton */
+.btn .icon {
+    flex-shrink: 0;
+}
+
+/* ===== CARDS FLAT ===== */
+.order-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md) !important;
+    transition: all 0.2s ease;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+    border-color: var(--primary);
+}
+
+/* ===== BADGES FLAT ===== */
+.card-badge,
+.chip {
+    border: none !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
+}
+
+.badge-pending {
+    background-color: var(--status-pending) !important;
+    color: white !important;
+}
+
+.badge-ready {
+    background-color: var(--status-ready) !important;
+    color: white !important;
+}
+
+.badge-delivered {
+    background-color: var(--status-delivered) !important;
+    color: white !important;
+}
+
+/* ===== CHIPS FLAT ===== */
+.chip {
+    background-color: var(--bg-card);
+    border: 2px solid var(--border) !important;
+    transition: all 0.2s ease;
+}
+
+.chip:hover {
+    border-color: var(--primary) !important;
+    background-color: rgba(46, 204, 113, 0.1);
+}
+
+.chip-active {
+    background-color: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+}
+
+/* ===== INPUTS FLAT ===== */
+.form-input,
+.form-select {
+    border: 2px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1) !important;
+}
+
+.form-input.error,
+.form-select.error {
+    border-color: var(--error) !important;
+}
+
+.form-input.success,
+.form-select.success {
+    border-color: var(--success) !important;
+}
+
+/* ===== HEADER FLAT ===== */
+.app-header {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    border-bottom: 1px solid var(--border);
+}
+
+.header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== MODAL FLAT ===== */
+.modal-container,
+.modal-content {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid var(--border);
+}
+
+/* ===== FAB FLAT ===== */
+.fab {
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3) !important;
+    background: var(--primary) !important;
+    border: none !important;
+}
+
+.fab:hover {
+    background: var(--primary-dark) !important;
+    box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4) !important;
+}
+
+/* ===== DARK MODE TOGGLE FLAT ===== */
+.dark-mode-toggle {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    border: 2px solid var(--border) !important;
+    background-color: var(--bg-card) !important;
+}
+
+.dark-mode-toggle:hover {
+    border-color: var(--primary) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ===== TOAST FLAT ===== */
+.toast {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    border-left: 4px solid;
+}
+
+.toast-success {
+    border-left-color: var(--success) !important;
+}
+
+.toast-error {
+    border-left-color: var(--error) !important;
+}
+
+.toast-warning {
+    border-left-color: var(--warning) !important;
+}
+
+.toast-info {
+    border-left-color: var(--info) !important;
+}
+
+/* ===== STATS FLAT ===== */
+.stat-item {
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    transition: all 0.2s ease;
+}
+
+.stat-pending {
+    background-color: rgba(243, 156, 18, 0.1);
+    color: var(--status-pending);
+}
+
+.stat-ready {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: var(--status-ready);
+}
+
+.stat-delivered {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: var(--status-delivered);
+}
+
+/* ===== LOADER FLAT ===== */
+#loader {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] #loader {
+    background-color: rgba(15, 20, 25, 0.95);
+}
+
+/* ===== TRANSITIONS FLAT ===== */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ===== RESPONSIVE FLAT ===== */
+@media (max-width: 768px) {
+    .order-card {
+        border-radius: var(--radius-lg) !important;
+    }
+    
+    /* Boutons plus compacts sur tablettes */
+    .card-btn {
+        padding: var(--spacing-sm) !important;
+        font-size: 0.8rem !important;
+    }
+}
+
+/* ===== MOBILE FLAT (< 480px) ===== */
+@media (max-width: 479px) {
+    /* Réduire encore plus les boutons sur mobile */
+    .btn {
+        font-size: 0.75rem !important;
+        letter-spacing: 0.3px !important;
+        padding: var(--spacing-xs) var(--spacing-sm) !important;
+    }
+    
+    .card-btn {
+        min-height: 40px !important;
+        padding: var(--spacing-xs) var(--spacing-sm) !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* Optimiser les icônes dans les boutons */
+    .btn .icon,
+    .card-btn .icon {
+        width: 0.95rem !important;
+        height: 0.95rem !important;
+    }
+    
+    /* Texte des boutons plus compact */
+    .btn-text {
+        line-height: 1.2;
+    }
+}
+
+/* ===== REMOVE GRADIENTS ===== */
+.btn-primary {
+    background: var(--primary) !important;
+    background-image: none !important;
+}
+
+/* ===== ICÔNES DANS CARDS ===== */
+.card-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-main);
+}
+
+.card-info-icon .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Couleurs contextuelles pour les icônes */
+.card-info-icon.icon-user-wrapper { color: var(--text-secondary); }
+.card-info-icon.icon-email-wrapper { 
+    color: var(--info);
+    background-color: rgba(52, 152, 219, 0.1);
+}
+.card-info-icon.icon-phone-wrapper { 
+    color: var(--success);
+    background-color: rgba(46, 204, 113, 0.1);
+}
+.card-info-icon.icon-basket-wrapper { 
+    color: var(--warning);
+    background-color: rgba(243, 156, 18, 0.1);
+}
+.card-info-icon.icon-calendar-wrapper { 
+    color: #9B59B6;
+    background-color: rgba(155, 89, 182, 0.1);
+}
+
+/* ===== ANIMATIONS FLAT ===== */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.order-card {
+    animation: slideUp 0.3s ease-out;
+}
+

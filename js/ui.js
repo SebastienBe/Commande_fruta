@@ -197,33 +197,46 @@ function createOrderCard(order) {
     // Icône selon l'état
     const stateIcon = STATE_COLORS[etat]?.icon || '📦';
     
+    // Icône de badge selon l'état
+    const badgeIcon = etat === ORDER_STATES.DELIVERED ? Icons.get('check', 'icon-sm') :
+                      etat === ORDER_STATES.READY ? Icons.get('ready', 'icon-sm') :
+                      Icons.get('pending', 'icon-sm');
+    
     card.innerHTML = `
         <div class="card-header">
             <div class="card-header-left">
-                <div class="card-id">#${id}</div>
+                <div class="card-id">${Icons.get('hash', 'icon-xs')}${id}</div>
                 <h3 class="card-name">
-                    <span class="card-name-icon">👤</span>
+                    ${Icons.get('user', 'icon-md')}
                     ${prenom} ${nom}
                 </h3>
             </div>
-            <span class="card-badge ${badgeClass}">${stateIcon} ${etat}</span>
+            <span class="card-badge ${badgeClass}">${badgeIcon} ${etat}</span>
         </div>
         
         <div class="card-body">
             <div class="card-info-item">
-                <span class="card-info-icon" aria-hidden="true">📧</span>
+                <span class="card-info-icon icon-email-wrapper" aria-hidden="true">
+                    ${Icons.get('email', 'icon-md')}
+                </span>
                 <span class="card-info-text">${email}</span>
             </div>
             <div class="card-info-item">
-                <span class="card-info-icon" aria-hidden="true">📞</span>
+                <span class="card-info-icon icon-phone-wrapper" aria-hidden="true">
+                    ${Icons.get('phone', 'icon-md')}
+                </span>
                 <span class="card-info-text">${telephone}</span>
             </div>
             <div class="card-info-item">
-                <span class="card-info-icon" aria-hidden="true">🛒</span>
+                <span class="card-info-icon icon-basket-wrapper" aria-hidden="true">
+                    ${Icons.get('basket', 'icon-md')}
+                </span>
                 <span class="card-info-text">${nombrePaniers} panier(s)</span>
             </div>
             <div class="card-info-item">
-                <span class="card-info-icon" aria-hidden="true">📅</span>
+                <span class="card-info-icon icon-calendar-wrapper" aria-hidden="true">
+                    ${Icons.get('calendar', 'icon-md')}
+                </span>
                 <span class="card-info-text">
                     <span class="card-info-label">Récupération :</span> ${dateRecup || 'N/A'}
                 </span>
@@ -237,7 +250,7 @@ function createOrderCard(order) {
                 data-order-id="${id}"
                 aria-label="Modifier la commande ${prenom} ${nom}"
             >
-                ✏️ Modifier
+                ${Icons.get('edit', 'icon-sm')} Modifier
             </button>
             <button 
                 type="button" 
@@ -254,7 +267,7 @@ function createOrderCard(order) {
                 data-order-id="${id}"
                 aria-label="Supprimer la commande ${prenom} ${nom}"
             >
-                🗑️ Supprimer
+                ${Icons.get('delete', 'icon-sm')} Supprimer
             </button>
         </div>
     `;
@@ -278,11 +291,11 @@ function createOrderCard(order) {
  */
 function getNextStateLabel(currentState) {
     if (currentState === ORDER_STATES.PENDING) {
-        return '→ Marquer Prêt';
+        return `${Icons.get('ready', 'icon-sm')} Marquer Prêt`;
     } else if (currentState === ORDER_STATES.READY) {
-        return '→ Marquer Livré';
+        return `${Icons.get('delivered', 'icon-sm')} Marquer Livré`;
     } else {
-        return '✅ Livré';
+        return `${Icons.get('check', 'icon-sm')} Livré`;
     }
 }
 
