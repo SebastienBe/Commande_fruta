@@ -82,6 +82,9 @@ function initStats() {
         console.warn('⚠️ DarkMode non disponible:', error);
     }
     
+    // Initialiser le menu mobile
+    setupMobileMenu();
+    
     // Initialiser les filtres
     setupFilters();
     
@@ -153,20 +156,81 @@ function setupEventListeners() {
         exportCSV();
     });
     
-    // Tri tableau
-    document.querySelectorAll('#statsTable thead th.sortable').forEach(th => {
-        th.addEventListener('click', () => {
-            const column = th.dataset.sort;
-            if (sortColumn === column) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortColumn = column;
-                sortDirection = 'asc';
-            }
-            renderTable();
+    // Tri tableau (sera configuré dynamiquement dans renderTable via setupTableSortListeners)
+    // Les listeners sont ajoutés automatiquement quand le tableau est rendu
+}
+
+/**
+ * Configure le menu mobile (hamburger)
+ */
+function setupMobileMenu() {
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const menuClose = document.getElementById('mobileMenuClose');
+    const menu = document.getElementById('mobileMenu');
+    const menuOverlay = document.getElementById('mobileMenuOverlay');
+    
+    if (!menuToggle || !menu || !menuClose) {
+        console.warn('⚠️ Éléments du menu mobile introuvables');
+        return;
+    }
+    
+    // Ouvrir le menu
+    menuToggle.addEventListener('click', () => {
+        openMobileMenu();
+        if (typeof Haptic !== 'undefined') Haptic.medium();
+    });
+    
+    // Fermer le menu
+    menuClose.addEventListener('click', () => {
+        closeMobileMenu();
+        if (typeof Haptic !== 'undefined') Haptic.light();
+    });
+    
+    // Fermer en cliquant sur l'overlay
+    if (menuOverlay) {
+        menuOverlay.addEventListener('click', () => {
+            closeMobileMenu();
         });
+    }
+    
+    // Fermer avec la touche Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menu.getAttribute('aria-hidden') === 'false') {
+            closeMobileMenu();
+        }
     });
 }
+
+/**
+ * Ouvre le menu mobile
+ */
+function openMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (menu && menuToggle) {
+        menu.setAttribute('aria-hidden', 'false');
+        menuToggle.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden'; // Empêcher le scroll du body
+    }
+}
+
+/**
+ * Ferme le menu mobile
+ */
+function closeMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (menu && menuToggle) {
+        menu.setAttribute('aria-hidden', 'true');
+        menuToggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = ''; // Réactiver le scroll
+    }
+}
+
+// Exposer globalement pour les liens onclick
+window.closeMobileMenu = closeMobileMenu;
 
 // ===== API CALLS =====
 
@@ -494,7 +558,7 @@ function renderKPIs(data) {
 }
 
 /**
- * Met à jour le graphique en barres empilées
+ * Met à jour le graphique en barres groupées (plus lisible)
  * @param {Object} data - Données agrégées
  */
 function updateBarChart(data) {
@@ -508,29 +572,52 @@ function updateBarChart(data) {
         return;
     }
     
-    // Extraire tous les fruits uniques
-    const allFruits = new Set();
+    // Extraire tous les fruits uniques et trier par quantité totale (décroissant)
+    const fruitTotals = {};
     fruitsParMois.forEach(month => {
-        Object.keys(month.fruits).forEach(fruit => allFruits.add(fruit.toLowerCase()));
+        Object.entries(month.fruits).forEach(([fruit, qty]) => {
+            const fruitKey = fruit.toLowerCase();
+            fruitTotals[fruitKey] = (fruitTotals[fruitKey] || 0) + (qty || 0);
+        });
     });
     
-    // Créer les datasets (1 par fruit)
-    const datasets = Array.from(allFruits).map(fruit => {
+    // Trier les fruits par quantité totale (du plus vendu au moins vendu)
+    const sortedFruits = Object.keys(fruitTotals).sort((a, b) => fruitTotals[b] - fruitTotals[a]);
+    
+    // Limiter à 8 fruits maximum pour la lisibilité
+    const topFruits = sortedFruits.slice(0, 8);
+    
+    // Créer les datasets (1 par fruit, limité aux top fruits)
+    const datasets = topFruits.map(fruit => {
         const fruitKey = fruit.toLowerCase();
+        const fruitName = fruit.charAt(0).toUpperCase() + fruit.slice(1);
         return {
-            label: fruit.charAt(0).toUpperCase() + fruit.slice(1),
-            data: fruitsParMois.map(month => month.fruits[fruit] || month.fruits[fruitKey] || 0),
+            label: fruitName,
+            data: fruitsParMois.map(month => {
+                const value = month.fruits[fruit] || month.fruits[fruitKey] || 0;
+                return value;
+            }),
             backgroundColor: FRUIT_COLORS[fruitKey] || FRUIT_COLORS[fruit] || '#CCCCCC',
-            borderWidth: 1
+            borderColor: FRUIT_COLORS[fruitKey] || FRUIT_COLORS[fruit] || '#CCCCCC',
+            borderWidth: 2,
+            borderRadius: 4,
+            barThickness: 'flex',
+            maxBarThickness: 50
         };
     });
     
-    // Mettre à jour les labels (mois)
-    const labels = fruitsParMois.map(month => month.label);
+    // Mettre à jour les labels (mois avec année si nécessaire)
+    const labels = fruitsParMois.map(month => {
+        const monthName = getMonthName(month.mois);
+        const year = month.annee || new Date().getFullYear();
+        // Afficher l'année seulement si on affiche plusieurs années
+        const showYear = fruitsParMois.some(m => m.annee !== year);
+        return showYear ? `${monthName} ${year}` : monthName;
+    });
     
     barChart.data.labels = labels;
     barChart.data.datasets = datasets;
-    barChart.update('none'); // Pas d'animation pour performance
+    barChart.update('active'); // Animation douce
 }
 
 /**
@@ -574,14 +661,74 @@ function updatePieChart(data) {
 /**
  * Affiche le tableau détaillé
  */
+/**
+ * Rend le tableau des détails mensuels (dynamique selon les données)
+ */
 function renderTable() {
     const tbody = document.getElementById('statsTableBody');
     const thead = document.querySelector('#statsTable thead tr');
+    const cardsContainer = document.getElementById('statsCardsContainer');
+    
+    if (!tbody || !thead) {
+        console.error('❌ Éléments du tableau introuvables');
+        return;
+    }
     
     if (currentStats.length === 0) {
         tbody.innerHTML = '';
+        if (cardsContainer) cardsContainer.innerHTML = '';
+        // Garder seulement les colonnes de base
+        thead.innerHTML = `
+            <th data-sort="mois" class="sortable">Mois</th>
+            <th data-sort="commandes" class="sortable">Commandes</th>
+            <th data-sort="total" class="sortable">Total Fruits</th>
+        `;
+        setupTableSortListeners();
         return;
     }
+    
+    // Extraire tous les fruits uniques pour les colonnes
+    const allFruitsSet = new Set();
+    currentStats.forEach(stat => {
+        const fruits = stat.fruits_sortis || {};
+        Object.keys(fruits).forEach(fruit => {
+            if (fruits[fruit] > 0) { // Seulement les fruits avec quantité > 0
+                allFruitsSet.add(fruit.toLowerCase());
+            }
+        });
+    });
+    
+    // Convertir en array et trier (alphabétique pour cohérence)
+    const allFruits = Array.from(allFruitsSet).sort();
+    
+    // Calculer les totaux par fruit pour trier par quantité (optionnel)
+    const fruitTotals = {};
+    allFruits.forEach(fruit => {
+        fruitTotals[fruit] = currentStats.reduce((sum, stat) => {
+            const fruits = stat.fruits_sortis || {};
+            return sum + (fruits[fruit] || 0);
+        }, 0);
+    });
+    
+    // Trier les fruits par quantité totale décroissante, puis alphabétique
+    const sortedFruits = allFruits.sort((a, b) => {
+        const diff = fruitTotals[b] - fruitTotals[a];
+        return diff !== 0 ? diff : a.localeCompare(b);
+    });
+    
+    // Reconstruire complètement le header (dynamique)
+    thead.innerHTML = `
+        <th data-sort="mois" class="sortable">Mois</th>
+        <th data-sort="commandes" class="sortable">Commandes</th>
+        <th data-sort="total" class="sortable">Total Fruits</th>
+        ${sortedFruits.map(fruit => {
+            const fruitName = fruit.charAt(0).toUpperCase() + fruit.slice(1);
+            return `<th data-sort="${fruit}" class="sortable" title="Total: ${fruitTotals[fruit].toLocaleString('fr-FR')}">${fruitName}</th>`;
+        }).join('')}
+    `;
+    
+    // Réinitialiser les event listeners pour le tri
+    setupTableSortListeners();
     
     // Trier les stats si nécessaire
     let sortedStats = [...currentStats];
@@ -591,8 +738,13 @@ function renderTable() {
             
             switch (sortColumn) {
                 case 'mois':
-                    aVal = a.mois || 0;
-                    bVal = b.mois || 0;
+                    // Trier par année puis mois
+                    const aYear = a.annee || parseInt(a.mois?.split('-')[0]) || 0;
+                    const bYear = b.annee || parseInt(b.mois?.split('-')[0]) || 0;
+                    const aMonth = a.mois || parseInt(a.mois?.split('-')[1]) || 0;
+                    const bMonth = b.mois || parseInt(b.mois?.split('-')[1]) || 0;
+                    aVal = aYear * 100 + aMonth;
+                    bVal = bYear * 100 + bMonth;
                     break;
                 case 'commandes':
                     aVal = a.nombre_commandes || 0;
@@ -604,9 +756,11 @@ function renderTable() {
                     break;
                 default:
                     // Tri par fruit
+                    const fruitsA = a.fruits_sortis || {};
+                    const fruitsB = b.fruits_sortis || {};
                     const fruitKey = sortColumn.toLowerCase();
-                    aVal = (a.fruits_sortis && (a.fruits_sortis[sortColumn] || a.fruits_sortis[fruitKey])) || 0;
-                    bVal = (b.fruits_sortis && (b.fruits_sortis[sortColumn] || b.fruits_sortis[fruitKey])) || 0;
+                    aVal = fruitsA[sortColumn] || fruitsA[fruitKey] || 0;
+                    bVal = fruitsB[sortColumn] || fruitsB[fruitKey] || 0;
             }
             
             if (sortDirection === 'asc') {
@@ -617,46 +771,23 @@ function renderTable() {
         });
     }
     
-    // Extraire tous les fruits uniques pour les colonnes
-    const allFruits = new Set();
-    currentStats.forEach(stat => {
-        Object.keys(stat.fruits_sortis || {}).forEach(fruit => allFruits.add(fruit));
-    });
-    
-    // Ajouter les colonnes fruits dans le header si nécessaire
-    const existingFruitCols = Array.from(thead.querySelectorAll('th')).slice(3); // Après Mois, Commandes, Total
-    const existingFruitNames = existingFruitCols.map(th => th.dataset.sort);
-    
-    Array.from(allFruits).forEach(fruit => {
-        if (!existingFruitNames.includes(fruit)) {
-            const th = document.createElement('th');
-            th.dataset.sort = fruit;
-            th.className = 'sortable';
-            th.textContent = fruit.charAt(0).toUpperCase() + fruit.slice(1);
-            th.addEventListener('click', () => {
-                if (sortColumn === fruit) {
-                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortColumn = fruit;
-                    sortDirection = 'asc';
-                }
-                renderTable();
-            });
-            thead.appendChild(th);
-        }
-    });
-    
-    // Générer les lignes
+    // Générer les lignes avec toutes les colonnes
     tbody.innerHTML = sortedStats.map(stat => {
         const fruits = stat.fruits_sortis || {};
-        const fruitCells = Array.from(allFruits).map(fruit => {
+        const monthName = getMonthName(stat.mois);
+        const year = stat.annee || (stat.mois ? stat.mois.split('-')[0] : '');
+        const monthLabel = year ? `${monthName} ${year}` : monthName;
+        
+        // Cellules pour chaque fruit (dans l'ordre trié)
+        const fruitCells = sortedFruits.map(fruit => {
             const qty = fruits[fruit] || 0;
-            return `<td>${qty.toLocaleString('fr-FR')}</td>`;
+            const displayQty = qty > 0 ? qty.toLocaleString('fr-FR') : '-';
+            return `<td class="${qty > 0 ? '' : 'text-muted'}">${displayQty}</td>`;
         }).join('');
         
         return `
             <tr>
-                <td>${getMonthName(stat.mois)} ${stat.annee}</td>
+                <td><strong>${monthLabel}</strong></td>
                 <td>${(stat.nombre_commandes || 0).toLocaleString('fr-FR')}</td>
                 <td><strong>${(stat.total_fruits || 0).toLocaleString('fr-FR')}</strong></td>
                 ${fruitCells}
@@ -670,6 +801,34 @@ function renderTable() {
         if (th.dataset.sort === sortColumn) {
             th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
         }
+    });
+    
+    // Rendre les cards pour mobile
+    if (cardsContainer) {
+        renderMobileCards(cardsContainer);
+    }
+}
+
+/**
+ * Configure les event listeners pour le tri du tableau
+ */
+function setupTableSortListeners() {
+    document.querySelectorAll('#statsTable thead th.sortable').forEach(th => {
+        // Supprimer les anciens listeners
+        const newTh = th.cloneNode(true);
+        th.parentNode.replaceChild(newTh, th);
+        
+        // Ajouter le nouveau listener
+        newTh.addEventListener('click', () => {
+            const column = newTh.dataset.sort;
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            renderTable();
+        });
     });
 }
 
@@ -695,38 +854,129 @@ function setupCharts() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             scales: {
                 x: {
-                    stacked: true,
-                    grid: { display: false }
+                    stacked: false, // Barres groupées au lieu d'empilées
+                    grid: { 
+                        display: false,
+                        drawBorder: true,
+                        borderColor: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        font: {
+                            size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 12,
+                            weight: '500'
+                        },
+                        color: 'rgba(0, 0, 0, 0.7)',
+                        maxRotation: window.innerWidth < 480 ? 60 : window.innerWidth < 768 ? 45 : 0,
+                        minRotation: window.innerWidth < 480 ? 60 : window.innerWidth < 768 ? 45 : 0,
+                        maxTicksLimit: window.innerWidth < 480 ? 6 : window.innerWidth < 768 ? 8 : 12
+                    }
                 },
                 y: {
-                    stacked: true,
+                    stacked: false,
                     beginAtZero: true,
+                    grid: {
+                        display: true,
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
                     ticks: {
-                        stepSize: 50
+                        stepSize: null, // Auto
+                        font: {
+                            size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 11
+                        },
+                        color: 'rgba(0, 0, 0, 0.6)',
+                        maxTicksLimit: window.innerWidth < 480 ? 5 : window.innerWidth < 768 ? 7 : 10,
+                        callback: function(value) {
+                            if (value >= 1000) {
+                                return (value / 1000).toFixed(1) + 'k';
+                            }
+                            return value.toLocaleString('fr-FR');
+                        }
                     },
                     title: {
-                        display: true,
-                        text: 'Nombre de fruits'
+                        display: window.innerWidth >= 480, // Masquer sur très petit écran
+                        text: 'Nombre de fruits',
+                        font: {
+                            size: window.innerWidth < 480 ? 9 : window.innerWidth < 768 ? 11 : 13,
+                            weight: '600'
+                        },
+                        color: 'rgba(0, 0, 0, 0.7)',
+                        padding: { top: window.innerWidth < 480 ? 5 : 10, bottom: window.innerWidth < 480 ? 5 : 10 }
                     }
                 }
             },
             plugins: {
                 legend: {
+                    display: window.innerWidth >= 360, // Masquer sur très petit écran
                     position: 'bottom',
+                    align: 'center',
                     labels: {
-                        padding: 15,
-                        usePointStyle: true
+                        padding: window.innerWidth < 480 ? 6 : window.innerWidth < 768 ? 8 : 12,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: {
+                            size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 11,
+                            weight: '500'
+                        },
+                        boxWidth: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 10 : 12,
+                        boxHeight: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 10 : 12,
+                        maxWidth: window.innerWidth < 480 ? 100 : window.innerWidth < 768 ? 120 : 150
                     }
                 },
                 tooltip: {
                     mode: 'index',
                     intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    padding: 12,
+                    titleFont: {
+                        size: window.innerWidth < 480 ? 11 : window.innerWidth < 768 ? 12 : 13,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: window.innerWidth < 480 ? 10 : window.innerWidth < 768 ? 11 : 12
+                    },
+                    padding: window.innerWidth < 480 ? 8 : 12,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    displayColors: true,
                     callbacks: {
-                        title: (items) => `Mois : ${items[0].label}`,
-                        label: (item) => `${item.dataset.label} : ${item.parsed.y.toLocaleString('fr-FR')} unités`
+                        title: (items) => {
+                            if (!items || items.length === 0) return '';
+                            return `📅 ${items[0].label}`;
+                        },
+                        label: (context) => {
+                            const value = context.parsed.y;
+                            // Calculer le total depuis les données du graphique pour ce point
+                            const dataIndex = context.dataIndex;
+                            const chart = context.chart;
+                            let total = 0;
+                            
+                            if (chart && chart.data && chart.data.datasets) {
+                                chart.data.datasets.forEach(dataset => {
+                                    if (dataset.data && dataset.data[dataIndex] !== undefined) {
+                                        total += dataset.data[dataIndex] || 0;
+                                    }
+                                });
+                            }
+                            
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${context.dataset.label}: ${value.toLocaleString('fr-FR')} unités${total > value ? ` (${percentage}%)` : ''}`;
+                        },
+                        footer: (items) => {
+                            if (!items || items.length === 0) return '';
+                            const total = items.reduce((sum, item) => sum + (item.parsed.y || 0), 0);
+                            return `Total: ${total.toLocaleString('fr-FR')} unités`;
+                        }
                     }
+                },
+                datalabels: {
+                    display: false // Désactivé par défaut (trop chargé)
                 }
             }
         }
@@ -750,10 +1000,16 @@ function setupCharts() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
+                    display: window.innerWidth >= 360,
                     position: 'bottom',
                     labels: {
-                        padding: 15,
-                        usePointStyle: true
+                        padding: window.innerWidth < 480 ? 6 : window.innerWidth < 768 ? 10 : 15,
+                        usePointStyle: true,
+                        font: {
+                            size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 11
+                        },
+                        boxWidth: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 10 : 12,
+                        maxWidth: window.innerWidth < 480 ? 100 : window.innerWidth < 768 ? 120 : 150
                     }
                 },
                 tooltip: {
@@ -780,8 +1036,8 @@ function setupCharts() {
  * @returns {String} Nom du mois
  */
 function getMonthName(monthNumber) {
-    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 
-                    'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     return months[monthNumber - 1] || `Mois ${monthNumber}`;
 }
 
@@ -867,6 +1123,127 @@ function showLoading() {
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.classList.add('hidden');
+}
+
+/**
+ * Rend les cards pour mobile
+ * @param {HTMLElement} container - Container pour les cards
+ */
+function renderMobileCards(container) {
+    if (!container || currentStats.length === 0) {
+        if (container) container.innerHTML = '';
+        return;
+    }
+    
+    // Extraire tous les fruits uniques
+    const allFruitsSet = new Set();
+    currentStats.forEach(stat => {
+        const fruits = stat.fruits_sortis || {};
+        Object.keys(fruits).forEach(fruit => {
+            if (fruits[fruit] > 0) {
+                allFruitsSet.add(fruit.toLowerCase());
+            }
+        });
+    });
+    
+    const allFruits = Array.from(allFruitsSet).sort();
+    
+    // Calculer les totaux par fruit
+    const fruitTotals = {};
+    allFruits.forEach(fruit => {
+        fruitTotals[fruit] = currentStats.reduce((sum, stat) => {
+            const fruits = stat.fruits_sortis || {};
+            return sum + (fruits[fruit] || 0);
+        }, 0);
+    });
+    
+    // Trier par quantité décroissante
+    const sortedFruits = allFruits.sort((a, b) => {
+        const diff = fruitTotals[b] - fruitTotals[a];
+        return diff !== 0 ? diff : a.localeCompare(b);
+    });
+    
+    // Trier les stats selon le tri actuel
+    let sortedStats = [...currentStats];
+    if (sortColumn) {
+        sortedStats.sort((a, b) => {
+            let aVal, bVal;
+            
+            if (sortColumn === 'mois') {
+                const aYear = a.annee || parseInt(a.mois?.split('-')[0]) || 0;
+                const bYear = b.annee || parseInt(b.mois?.split('-')[0]) || 0;
+                const aMonth = parseInt(a.mois?.split('-')[1]) || 0;
+                const bMonth = parseInt(b.mois?.split('-')[1]) || 0;
+                aVal = aYear * 100 + aMonth;
+                bVal = bYear * 100 + bMonth;
+            } else if (sortColumn === 'commandes') {
+                aVal = a.nombre_commandes || 0;
+                bVal = b.nombre_commandes || 0;
+            } else if (sortColumn === 'total') {
+                aVal = a.total_fruits || 0;
+                bVal = b.total_fruits || 0;
+            } else {
+                // Tri par fruit
+                const fruitsA = a.fruits_sortis || {};
+                const fruitsB = b.fruits_sortis || {};
+                const fruitKey = sortColumn.toLowerCase();
+                aVal = fruitsA[sortColumn] || fruitsA[fruitKey] || 0;
+                bVal = fruitsB[sortColumn] || fruitsB[fruitKey] || 0;
+            }
+            
+            if (typeof aVal === 'string') {
+                return sortDirection === 'asc' 
+                    ? aVal.localeCompare(bVal)
+                    : bVal.localeCompare(aVal);
+            } else {
+                return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+            }
+        });
+    }
+    
+    // Générer les cards
+    container.innerHTML = sortedStats.map(stat => {
+        const monthName = getMonthName(stat.mois);
+        const year = stat.annee || (stat.mois ? stat.mois.split('-')[0] : new Date().getFullYear());
+        const fruits = stat.fruits_sortis || {};
+        
+        // Top 5 fruits pour cette période
+        const topFruits = sortedFruits
+            .filter(fruit => (fruits[fruit] || 0) > 0)
+            .slice(0, 5)
+            .map(fruit => {
+                const qty = fruits[fruit] || 0;
+                const fruitName = fruit.charAt(0).toUpperCase() + fruit.slice(1);
+                return `<div class="mobile-card-fruit">
+                    <span class="mobile-card-fruit-name">${fruitName}</span>
+                    <span class="mobile-card-fruit-qty">${qty.toLocaleString('fr-FR')}</span>
+                </div>`;
+            }).join('');
+        
+        const moreFruits = sortedFruits.filter(fruit => (fruits[fruit] || 0) > 0).length - 5;
+        
+        return `
+            <div class="mobile-stats-card">
+                <div class="mobile-card-header">
+                    <h4 class="mobile-card-month">${monthName} ${year}</h4>
+                    <div class="mobile-card-stats">
+                        <span class="mobile-card-stat">
+                            <span class="mobile-card-stat-label">Commandes</span>
+                            <span class="mobile-card-stat-value">${(stat.nombre_commandes || 0).toLocaleString('fr-FR')}</span>
+                        </span>
+                        <span class="mobile-card-stat">
+                            <span class="mobile-card-stat-label">Total</span>
+                            <span class="mobile-card-stat-value">${(stat.total_fruits || 0).toLocaleString('fr-FR')}</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="mobile-card-fruits">
+                    ${topFruits}
+                    ${moreFruits > 0 ? `<div class="mobile-card-more">+ ${moreFruits} autre${moreFruits > 1 ? 's' : ''}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 console.log('✅ stats.js chargé');
