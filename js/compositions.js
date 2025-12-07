@@ -277,6 +277,18 @@ async function loadCompositions(filters = {}) {
                 normalized.db_id = comp.id;
             }
             
+            // ✅ Normaliser le champ actif (gérer string "true"/"false", boolean, 1/0)
+            if (normalized.actif !== undefined && normalized.actif !== null) {
+                if (typeof normalized.actif === 'string') {
+                    normalized.actif = normalized.actif.toLowerCase() === 'true' || normalized.actif === '1';
+                } else if (typeof normalized.actif === 'number') {
+                    normalized.actif = normalized.actif === 1;
+                }
+                // Si c'est déjà un boolean, on le garde tel quel
+            } else {
+                normalized.actif = false; // Par défaut si absent
+            }
+            
             // Parser composition_json si c'est une string
             if (typeof comp.composition_json === 'string') {
                 try {
@@ -560,7 +572,21 @@ function renderCompositions() {
     let filtered = [...allCompositions];
     
     if (activeFilters.activeOnly) {
-        filtered = filtered.filter(c => c.actif);
+        console.log('🔍 Filtre "Actives uniquement" activé');
+        console.log('📋 Toutes les compositions:', allCompositions.map(c => ({
+            id: c.id,
+            nom: c.nom,
+            actif: c.actif,
+            actifType: typeof c.actif
+        })));
+        
+        filtered = filtered.filter(c => {
+            const isActive = c.actif === true;
+            console.log(`  ${c.nom}: actif = ${c.actif} (${typeof c.actif}) → ${isActive ? '✅ INCLUS' : '❌ EXCLU'}`);
+            return isActive;
+        });
+        
+        console.log(`✅ ${filtered.length} composition(s) active(s) trouvée(s)`);
     }
     
     if (activeFilters.date) {

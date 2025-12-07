@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <!-- ===== META TAGS ===== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Statistiques mensuelles de gestion des paniers de fruits - Mobile-first">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <title>📊 Statistiques Mensuelles - Paniers Fruits</title>
+    
+    <!-- ===== FAVICON ===== -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    
+    <!-- ===== FONTS ===== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ===== STYLESHEETS ===== -->
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/flat-design.css">
+    <link rel="stylesheet" href="css/stats.css">
+    
+    <!-- ===== CHART.JS ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js" defer></script>
+</head>
+<body>
+    
+    <!-- ===== HEADER ===== -->
+    <header class="app-header" role="banner">
+        <div class="header-content">
+            <div style="display: flex; align-items: center; gap: var(--spacing-md); flex-wrap: wrap; width: 100%;">
+                <h1 class="header-title" style="margin: 0;">
+                    <span class="header-icon">
+                        <svg class="icon icon-2xl icon-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 16L12 11L16 15L21 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 10V3H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="header-text">Statistiques Mensuelles</span>
+                </h1>
+                
+                <div class="stats-header-actions">
+                    <a href="index.html" class="btn-back" aria-label="Retour aux commandes">
+                        <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Commandes</span>
+                    </a>
+                    <a href="compositions.html" class="btn-back" aria-label="Retour aux compositions">
+                        <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Compositions</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="app-main" role="main">
+        
+        <!-- Section Filtres -->
+        <section class="stats-filters-section" aria-label="Filtres de statistiques">
+            <div class="stats-filters-container">
+                <div class="form-group">
+                    <label for="filterYear" class="form-label">Année</label>
+                    <select id="filterYear" class="form-select" aria-describedby="hintYear">
+                        <!-- Rempli dynamiquement -->
+                    </select>
+                    <span id="hintYear" class="form-hint">Sélectionnez l'année</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="filterMonth" class="form-label">Mois</label>
+                    <select id="filterMonth" class="form-select" aria-describedby="hintMonth">
+                        <option value="">Toute l'année</option>
+                        <option value="1">Janvier</option>
+                        <option value="2">Février</option>
+                        <option value="3">Mars</option>
+                        <option value="4">Avril</option>
+                        <option value="5">Mai</option>
+                        <option value="6">Juin</option>
+                        <option value="7">Juillet</option>
+                        <option value="8">Août</option>
+                        <option value="9">Septembre</option>
+                        <option value="10">Octobre</option>
+                        <option value="11">Novembre</option>
+                        <option value="12">Décembre</option>
+                    </select>
+                    <span id="hintMonth" class="form-hint">Sélectionnez un mois ou laissez vide pour toute l'année</span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" style="opacity: 0;">Actions</label>
+                    <button 
+                        type="button" 
+                        id="btnRecalculate" 
+                        class="btn btn-secondary"
+                        aria-label="Recalculer les statistiques"
+                    >
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M12 8V12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Recalculer
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section KPI Cards -->
+        <section class="stats-kpi-section" aria-label="Indicateurs clés">
+            <div class="stats-kpi-grid" id="kpiContainer">
+                <!-- Rempli dynamiquement -->
+                <div class="kpi-card" id="kpi-commandes">
+                    <div class="kpi-icon">📦</div>
+                    <div class="kpi-value">-</div>
+                    <div class="kpi-label">Commandes</div>
+                </div>
+                <div class="kpi-card" id="kpi-fruits">
+                    <div class="kpi-icon">🍊</div>
+                    <div class="kpi-value">-</div>
+                    <div class="kpi-label">Fruits sortis</div>
+                </div>
+                <div class="kpi-card" id="kpi-top">
+                    <div class="kpi-icon">🏆</div>
+                    <div class="kpi-value">-</div>
+                    <div class="kpi-label">Fruit le plus commandé</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section Graphiques -->
+        <section class="stats-charts-section" aria-label="Graphiques statistiques">
+            <div class="stats-charts-grid">
+                <!-- Bar Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Évolution Mensuelle</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="barChart" aria-label="Graphique en barres empilées de l'évolution mensuelle des fruits"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Pie Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Répartition des Fruits</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="pieChart" aria-label="Graphique en camembert de la répartition des fruits"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section Tableau -->
+        <section class="stats-table-section" aria-label="Tableau détaillé des statistiques">
+            <div class="stats-table-header">
+                <h3 class="section-title">Détails Mensuels</h3>
+                <button 
+                    type="button" 
+                    id="btnExportCSV" 
+                    class="btn btn-secondary"
+                    aria-label="Exporter en CSV"
+                >
+                    <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Exporter CSV
+                </button>
+            </div>
+            
+            <div class="stats-table-wrapper">
+                <table id="statsTable" class="stats-table" role="table" aria-label="Tableau détaillé des statistiques mensuelles">
+                    <thead>
+                        <tr>
+                            <th data-sort="mois" class="sortable">Mois</th>
+                            <th data-sort="commandes" class="sortable">Commandes</th>
+                            <th data-sort="total" class="sortable">Total Fruits</th>
+                            <!-- Colonnes fruits ajoutées dynamiquement -->
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                        <!-- Rempli dynamiquement -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="statsEmptyState" class="empty-state hidden">
+                <div class="empty-state-icon">📊</div>
+                <h3 class="empty-state-title">Aucune statistique disponible</h3>
+                <p class="empty-state-text">Sélectionnez une autre année ou mois, ou recalculez les statistiques.</p>
+            </div>
+        </section>
+        
+    </main>
+    
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div id="toastContainer" class="toast-container" role="status" aria-live="polite"></div>
+    
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Chargement des statistiques...</p>
+    </div>
+    
+    <!-- ===== SCRIPTS ===== -->
+    <script src="js/config.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/haptic.js"></script>
+    <script src="js/darkmode.js"></script>
+    <script src="js/stats.js"></script>
+</body>
+</html>
+
