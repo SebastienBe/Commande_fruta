@@ -127,16 +127,24 @@
     background-color: var(--bg-card);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
     transition: all var(--transition-base);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 .order-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
+}
+
+/* Sur écrans moyens et plus : plus d'espace */
+@media (min-width: 480px) {
+    .order-card {
+        padding: var(--spacing-md);
+        gap: var(--spacing-md);
+    }
 }
 
 /* Card Header */
@@ -235,16 +243,30 @@
 /* Card Footer */
 .card-footer {
     display: flex;
-    gap: var(--spacing-sm);
+    flex-direction: column;
+    gap: var(--spacing-xs);
     padding-top: var(--spacing-sm);
     border-top: 1px solid var(--border);
 }
 
 .card-btn {
-    flex: 1;
-    min-height: 40px;
+    width: 100%;
+    min-height: var(--touch-target-min);
     padding: var(--spacing-sm) var(--spacing-md);
     font-size: var(--font-size-sm);
+    justify-content: center;
+}
+
+/* Sur écrans moyens et plus : boutons en ligne */
+@media (min-width: 480px) {
+    .card-footer {
+        flex-direction: row;
+        gap: var(--spacing-sm);
+    }
+    
+    .card-btn {
+        flex: 1;
+    }
 }
 
 /* ===== MODAL ===== */
