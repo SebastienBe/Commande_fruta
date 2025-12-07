@@ -94,8 +94,8 @@ function initStats() {
     // Initialiser les event listeners
     setupEventListeners();
     
-    // Charger les statistiques
-    loadStats();
+    // Recalculer et charger les statistiques au chargement
+    recalculateStats(true); // true = recalcul automatique (sans confirmation)
 }
 
 /**
@@ -134,20 +134,22 @@ function setupEventListeners() {
     document.getElementById('filterYear').addEventListener('change', (e) => {
         currentYear = parseInt(e.target.value);
         if (typeof Haptic !== 'undefined') Haptic.light();
-        loadStats();
+        // Recalculer puis recharger les stats
+        recalculateStats(true); // true = recalcul automatique (sans confirmation)
     });
     
     // Filtre mois
     document.getElementById('filterMonth').addEventListener('change', (e) => {
         currentMonth = e.target.value ? parseInt(e.target.value) : null;
         if (typeof Haptic !== 'undefined') Haptic.light();
-        loadStats();
+        // Recalculer puis recharger les stats
+        recalculateStats(true); // true = recalcul automatique (sans confirmation)
     });
     
-    // Bouton recalculer
+    // Bouton recalculer (manuel - avec confirmation)
     document.getElementById('btnRecalculate').addEventListener('click', () => {
         if (typeof Haptic !== 'undefined') Haptic.medium();
-        recalculateStats();
+        recalculateStats(false); // false = recalcul manuel (avec confirmation)
     });
     
     // Bouton export CSV
@@ -396,16 +398,20 @@ async function loadStats(year = currentYear, month = currentMonth) {
  */
 /**
  * Recalcule toutes les statistiques depuis les commandes
+ * @param {Boolean} auto - Si true, recalcul automatique sans confirmation. Si false, demande confirmation.
  */
-async function recalculateStats() {
-    if (!confirm('Recalculer toutes les statistiques depuis les commandes ?\n\nCette opération peut prendre quelques secondes.')) {
-        return;
+async function recalculateStats(auto = false) {
+    // Demander confirmation seulement si recalcul manuel (bouton)
+    if (!auto) {
+        if (!confirm('Recalculer toutes les statistiques depuis les commandes ?\n\nCette opération peut prendre quelques secondes.')) {
+            return;
+        }
     }
     
     showLoading();
     
     try {
-        console.log('🔄 Recalcul de toutes les stats depuis les commandes...');
+        console.log(`🔄 Recalcul de toutes les stats depuis les commandes... (${auto ? 'automatique' : 'manuel'})`);
         
         // Utiliser le nouvel endpoint UPDATE
         const response = await fetch(STATS_API_ENDPOINTS.UPDATE, {
@@ -426,10 +432,15 @@ async function recalculateStats() {
         const result = await response.json();
         console.log('✅ Stats recalculées:', result);
         
-        showNotification(`Statistiques recalculées avec succès ! ✅\n${result.count || 0} mois mis à jour`, 'success');
-        if (typeof Haptic !== 'undefined') Haptic.success();
+        // Afficher notification seulement si recalcul manuel ou si erreur
+        if (!auto) {
+            showNotification(`Statistiques recalculées avec succès ! ✅\n${result.count || 0} mois mis à jour`, 'success');
+            if (typeof Haptic !== 'undefined') Haptic.success();
+        } else {
+            console.log(`✅ Recalcul automatique réussi: ${result.count || 0} mois mis à jour`);
+        }
         
-        // Recharger les stats
+        // Recharger les stats après recalcul
         await loadStats();
         
     } catch (error) {
@@ -687,49 +698,6 @@ function renderTable() {
         return;
     }
     
-    // Extraire tous les fruits uniques pour les colonnes
-    const allFruitsSet = new Set();
-    currentStats.forEach(stat => {
-        const fruits = stat.fruits_sortis || {};
-        Object.keys(fruits).forEach(fruit => {
-            if (fruits[fruit] > 0) { // Seulement les fruits avec quantité > 0
-                allFruitsSet.add(fruit.toLowerCase());
-            }
-        });
-    });
-    
-    // Convertir en array et trier (alphabétique pour cohérence)
-    const allFruits = Array.from(allFruitsSet).sort();
-    
-    // Calculer les totaux par fruit pour trier par quantité (optionnel)
-    const fruitTotals = {};
-    allFruits.forEach(fruit => {
-        fruitTotals[fruit] = currentStats.reduce((sum, stat) => {
-            const fruits = stat.fruits_sortis || {};
-            return sum + (fruits[fruit] || 0);
-        }, 0);
-    });
-    
-    // Trier les fruits par quantité totale décroissante, puis alphabétique
-    const sortedFruits = allFruits.sort((a, b) => {
-        const diff = fruitTotals[b] - fruitTotals[a];
-        return diff !== 0 ? diff : a.localeCompare(b);
-    });
-    
-    // Reconstruire complètement le header (dynamique)
-    thead.innerHTML = `
-        <th data-sort="mois" class="sortable">Mois</th>
-        <th data-sort="commandes" class="sortable">Commandes</th>
-        <th data-sort="total" class="sortable">Total Fruits</th>
-        ${sortedFruits.map(fruit => {
-            const fruitName = fruit.charAt(0).toUpperCase() + fruit.slice(1);
-            return `<th data-sort="${fruit}" class="sortable" title="Total: ${fruitTotals[fruit].toLocaleString('fr-FR')}">${fruitName}</th>`;
-        }).join('')}
-    `;
-    
-    // Réinitialiser les event listeners pour le tri
-    setupTableSortListeners();
-    
     // Trier les stats si nécessaire
     let sortedStats = [...currentStats];
     if (sortColumn) {
@@ -738,11 +706,10 @@ function renderTable() {
             
             switch (sortColumn) {
                 case 'mois':
-                    // Trier par année puis mois
                     const aYear = a.annee || parseInt(a.mois?.split('-')[0]) || 0;
                     const bYear = b.annee || parseInt(b.mois?.split('-')[0]) || 0;
-                    const aMonth = a.mois || parseInt(a.mois?.split('-')[1]) || 0;
-                    const bMonth = b.mois || parseInt(b.mois?.split('-')[1]) || 0;
+                    const aMonth = parseInt(a.mois?.split('-')[1]) || 0;
+                    const bMonth = parseInt(b.mois?.split('-')[1]) || 0;
                     aVal = aYear * 100 + aMonth;
                     bVal = bYear * 100 + bMonth;
                     break;
@@ -755,7 +722,6 @@ function renderTable() {
                     bVal = b.total_fruits || 0;
                     break;
                 default:
-                    // Tri par fruit
                     const fruitsA = a.fruits_sortis || {};
                     const fruitsB = b.fruits_sortis || {};
                     const fruitKey = sortColumn.toLowerCase();
@@ -771,42 +737,8 @@ function renderTable() {
         });
     }
     
-    // Générer les lignes avec toutes les colonnes
-    tbody.innerHTML = sortedStats.map(stat => {
-        const fruits = stat.fruits_sortis || {};
-        const monthName = getMonthName(stat.mois);
-        const year = stat.annee || (stat.mois ? stat.mois.split('-')[0] : '');
-        const monthLabel = year ? `${monthName} ${year}` : monthName;
-        
-        // Cellules pour chaque fruit (dans l'ordre trié)
-        const fruitCells = sortedFruits.map(fruit => {
-            const qty = fruits[fruit] || 0;
-            const displayQty = qty > 0 ? qty.toLocaleString('fr-FR') : '-';
-            return `<td class="${qty > 0 ? '' : 'text-muted'}">${displayQty}</td>`;
-        }).join('');
-        
-        return `
-            <tr>
-                <td><strong>${monthLabel}</strong></td>
-                <td>${(stat.nombre_commandes || 0).toLocaleString('fr-FR')}</td>
-                <td><strong>${(stat.total_fruits || 0).toLocaleString('fr-FR')}</strong></td>
-                ${fruitCells}
-            </tr>
-        `;
-    }).join('');
-    
-    // Mettre à jour les indicateurs de tri
-    thead.querySelectorAll('th').forEach(th => {
-        th.classList.remove('sort-asc', 'sort-desc');
-        if (th.dataset.sort === sortColumn) {
-            th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
-        }
-    });
-    
-    // Rendre les cards pour mobile
-    if (cardsContainer) {
-        renderMobileCards(cardsContainer);
-    }
+    // Rendre les cards (vue liste principale)
+    renderMobileCards(cardsContainer, sortedStats);
 }
 
 /**
@@ -1202,15 +1134,14 @@ function renderMobileCards(container) {
     }
     
     // Générer les cards
-    container.innerHTML = sortedStats.map(stat => {
+    const cardsHtml = sortedStats.map(stat => {
         const monthName = getMonthName(stat.mois);
         const year = stat.annee || (stat.mois ? stat.mois.split('-')[0] : new Date().getFullYear());
         const fruits = stat.fruits_sortis || {};
         
-        // Top 5 fruits pour cette période
-        const topFruits = sortedFruits
+        // Afficher TOUS les fruits avec quantité > 0 (pas de limite)
+        const allFruitsWithQty = sortedFruits
             .filter(fruit => (fruits[fruit] || 0) > 0)
-            .slice(0, 5)
             .map(fruit => {
                 const qty = fruits[fruit] || 0;
                 const fruitName = fruit.charAt(0).toUpperCase() + fruit.slice(1);
@@ -1220,30 +1151,29 @@ function renderMobileCards(container) {
                 </div>`;
             }).join('');
         
-        const moreFruits = sortedFruits.filter(fruit => (fruits[fruit] || 0) > 0).length - 5;
-        
         return `
-            <div class="mobile-stats-card">
+            <article class="mobile-stats-card" role="listitem">
                 <div class="mobile-card-header">
                     <h4 class="mobile-card-month">${monthName} ${year}</h4>
                     <div class="mobile-card-stats">
-                        <span class="mobile-card-stat">
-                            <span class="mobile-card-stat-label">Commandes</span>
+                        <div class="mobile-card-stat">
+                            <span class="mobile-card-stat-label">📦 Commandes</span>
                             <span class="mobile-card-stat-value">${(stat.nombre_commandes || 0).toLocaleString('fr-FR')}</span>
-                        </span>
-                        <span class="mobile-card-stat">
-                            <span class="mobile-card-stat-label">Total</span>
+                        </div>
+                        <div class="mobile-card-stat">
+                            <span class="mobile-card-stat-label">🍎 Total Fruits</span>
                             <span class="mobile-card-stat-value">${(stat.total_fruits || 0).toLocaleString('fr-FR')}</span>
-                        </span>
+                        </div>
                     </div>
                 </div>
                 <div class="mobile-card-fruits">
-                    ${topFruits}
-                    ${moreFruits > 0 ? `<div class="mobile-card-more">+ ${moreFruits} autre${moreFruits > 1 ? 's' : ''}</div>` : ''}
+                    ${allFruitsWithQty || '<div class="mobile-card-no-fruits">Aucun fruit</div>'}
                 </div>
-            </div>
+            </article>
         `;
     }).join('');
+    
+    container.innerHTML = cardsHtml;
 }
 
 console.log('✅ stats.js chargé');

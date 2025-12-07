@@ -281,10 +281,23 @@ function sanitizeFormData(formData) {
         etat: formData.etat || ORDER_STATES.PENDING
     };
     
-    // Ajouter composition_id seulement s'il existe
-    if (formData.composition_id) {
-        sanitized.composition_id = formData.composition_id;
+    // ⚠️ CORRECTION : Toujours inclure composition_id (même si null ou vide)
+    // pour éviter qu'il soit perdu lors des mises à jour
+    if (formData.hasOwnProperty('composition_id')) {
+        // Si c'est une chaîne vide, convertir en null
+        sanitized.composition_id = formData.composition_id && formData.composition_id.trim() !== '' 
+            ? formData.composition_id.trim() 
+            : null;
+    } else {
+        // Si le champ n'existe pas du tout, mettre null par défaut
+        sanitized.composition_id = null;
     }
+    
+    console.log('🔍 [sanitizeFormData] composition_id:', {
+        original: formData.composition_id,
+        sanitized: sanitized.composition_id,
+        type: typeof sanitized.composition_id
+    });
     
     return sanitized;
 }

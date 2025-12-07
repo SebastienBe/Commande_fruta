@@ -241,16 +241,11 @@
                 </button>
             </div>
             
-            <!-- Vue Tableau (Desktop) -->
-            <div class="stats-table-wrapper desktop-view">
+            <!-- Vue Tableau (Desktop) - Masquée, on utilise uniquement la liste -->
+            <div class="stats-table-wrapper desktop-view" style="display: none;">
                 <table id="statsTable" class="stats-table" role="table" aria-label="Tableau détaillé des statistiques mensuelles">
                     <thead>
-                        <tr>
-                            <th data-sort="mois" class="sortable">Mois</th>
-                            <th data-sort="commandes" class="sortable">Commandes</th>
-                            <th data-sort="total" class="sortable">Total Fruits</th>
-                            <!-- Colonnes fruits ajoutées dynamiquement -->
-                        </tr>
+                        <tr></tr>
                     </thead>
                     <tbody id="statsTableBody">
                         <!-- Rempli dynamiquement -->

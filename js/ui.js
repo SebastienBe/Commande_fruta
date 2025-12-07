@@ -522,10 +522,18 @@ async function handleQuickStateChange(order) {
         if (dateRecup) updateData.dateRecuperation = dateRecup;    // ← camelCase
         if (dateCreation) updateData.dateCreation = dateCreation;  // ← camelCase
         
-        // Ajouter composition_id (peut être null)
-        updateData.composition_id = order.composition_id || null;
+        // ⚠️ CORRECTION : Toujours inclure composition_id (même si null ou undefined)
+        // pour éviter qu'il soit perdu lors du changement d'état rapide
+        const compositionId = order.composition_id || order.Composition_ID || null;
+        updateData.composition_id = compositionId && compositionId.trim && compositionId.trim() !== '' 
+            ? compositionId.trim() 
+            : null;
         
         console.log('📤 Données envoyées à l\'API (format modal):', updateData);
+        console.log('🔍 [handleQuickStateChange] composition_id:', {
+            original: order.composition_id || order.Composition_ID,
+            sanitized: updateData.composition_id
+        });
         
         await updateOrder(order.id || order.ID, updateData);
         
