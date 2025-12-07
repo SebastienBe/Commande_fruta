@@ -75,6 +75,9 @@ function initCompositions() {
     // Event listeners
     setupEventListeners();
     
+    // Initialiser le menu mobile
+    setupMobileMenu();
+    
     // Charger les compositions
     loadCompositions();
 }
@@ -1330,6 +1333,101 @@ function showLoader() {
 function hideLoader() {
     document.getElementById('loaderComp')?.classList.add('hidden');
 }
+
+/* ============================================
+   MENU MOBILE
+   ============================================ */
+
+/**
+ * Initialise le menu mobile
+ */
+function setupMobileMenu() {
+    console.log('📱 Initialisation du menu mobile...');
+
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const menuClose = document.getElementById('mobileMenuClose');
+    const menu = document.getElementById('mobileMenu');
+    const menuOverlay = document.getElementById('mobileMenuOverlay');
+
+    console.log('🔍 Éléments trouvés:', {
+        menuToggle: !!menuToggle,
+        menuClose: !!menuClose,
+        menu: !!menu,
+        menuOverlay: !!menuOverlay
+    });
+
+    if (!menuToggle || !menu || !menuClose) {
+        console.warn('⚠️ Éléments du menu mobile introuvables');
+        return;
+    }
+
+    // Ouvrir le menu
+    menuToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🍔 Clic sur le bouton hamburger');
+        openMobileMenu();
+        if (typeof Haptic !== 'undefined') Haptic.medium();
+    });
+
+    // Fermer le menu
+    menuClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('❌ Clic sur le bouton fermer');
+        closeMobileMenu();
+        if (typeof Haptic !== 'undefined') Haptic.light();
+    });
+
+    // Fermer en cliquant sur l'overlay
+    if (menuOverlay) {
+        menuOverlay.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeMobileMenu();
+        });
+    }
+
+    // Fermer avec la touche Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menu.getAttribute('aria-hidden') === 'false') {
+            closeMobileMenu();
+        }
+    });
+
+    console.log('✅ Menu mobile initialisé avec succès');
+}
+
+/**
+ * Ouvre le menu mobile
+ */
+function openMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (menu && menuToggle) {
+        menu.setAttribute('aria-hidden', 'false');
+        menuToggle.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden'; // Empêcher le scroll du body
+    }
+}
+
+/**
+ * Ferme le menu mobile
+ */
+function closeMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (menu && menuToggle) {
+        menu.setAttribute('aria-hidden', 'true');
+        menuToggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = ''; // Réactiver le scroll
+    }
+}
+
+// Exposer globalement pour les liens onclick
+window.closeMobileMenu = closeMobileMenu;
 
 /**
  * Affiche l'empty state
