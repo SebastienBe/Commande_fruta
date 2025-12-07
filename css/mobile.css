@@ -5,7 +5,7 @@
 /* ===== HEADER ===== */
 @media (max-width: 479px) {
     .app-header {
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: var(--spacing-sm); /* 8px partout pour cohérence */
     }
     
     .header-title {
@@ -60,7 +60,7 @@
     }
     
     .filters-bar {
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: var(--spacing-sm); /* 8px partout */
     }
     
     .filters-chips {
@@ -85,7 +85,7 @@
 /* ===== ORDER CARDS ===== */
 @media (max-width: 479px) {
     .orders-grid {
-        padding: var(--spacing-sm) var(--spacing-md);
+        padding: var(--spacing-sm); /* 8px partout au lieu de 8px 16px */
         gap: var(--spacing-sm);
     }
     
@@ -167,8 +167,8 @@
 /* ===== BOUTON FAB (Nouvelle Commande) ===== */
 @media (max-width: 479px) {
     .fab {
-        bottom: var(--spacing-md);
-        right: var(--spacing-md);
+        bottom: var(--spacing-sm);
+        right: var(--spacing-sm);
         width: 56px;
         height: 56px;
         font-size: 1.5rem;
@@ -260,9 +260,9 @@
 /* ===== TOAST ===== */
 @media (max-width: 479px) {
     .toast-container {
-        bottom: var(--spacing-md);
-        right: var(--spacing-md);
-        left: var(--spacing-md);
+        bottom: var(--spacing-sm);
+        right: var(--spacing-sm);
+        left: var(--spacing-sm);
     }
     
     .toast {

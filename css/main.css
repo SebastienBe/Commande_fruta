@@ -156,6 +156,13 @@ main {
     padding: 0 var(--spacing-md);
 }
 
+/* Réduire le padding sur mobile */
+@media (max-width: 479px) {
+    .controls-section {
+        padding: 0 var(--spacing-sm); /* 8px au lieu de 16px */
+    }
+}
+
 /* Search Bar */
 .search-bar {
     margin-bottom: var(--spacing-md);
@@ -242,6 +249,13 @@ main {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 var(--spacing-md);
+}
+
+/* Réduire le padding sur mobile */
+@media (max-width: 479px) {
+    .orders-section {
+        padding: 0; /* Pas de padding, géré par orders-grid */
+    }
 }
 
 /* Loader */
