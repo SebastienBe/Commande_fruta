@@ -17,11 +17,18 @@ let isEditMode = false;
 /**
  * Charge toutes les commandes depuis l'API
  */
-async function loadOrders() {
+async function loadOrders(showSkeletons = true) {
     console.log('🔄 Chargement des commandes...');
     
-    showLoader(true);
+    const ordersGrid = document.getElementById('ordersGrid');
     hideEmptyState();
+    
+    // Afficher skeleton loaders au lieu du loader classique
+    if (showSkeletons && ordersGrid) {
+        SkeletonLoader.showSkeletons(ordersGrid, 6);
+    } else {
+        showLoader(true);
+    }
     
     try {
         const rawOrders = await getOrders();
@@ -64,6 +71,9 @@ async function loadOrders() {
     } catch (error) {
         console.error('❌ Erreur chargement:', error);
         showLoader(false);
+        if (ordersGrid) {
+            ordersGrid.innerHTML = '';
+        }
         showEmptyState('Erreur de chargement', error.message);
         showToast(ERROR_MESSAGES.LOAD_ERROR, 'error');
     }
@@ -73,6 +83,13 @@ async function loadOrders() {
  * Applique les filtres et le tri aux commandes
  */
 function applyFiltersAndSort() {
+    // Sauvegarder les filtres actuels
+    PersistentFilters.save({
+        status: currentFilter,
+        search: searchQuery,
+        sort: currentSort
+    });
+    
     // 1. Filtrer par état
     if (currentFilter === 'all') {
         filteredOrders = [...allOrders];
@@ -855,4 +872,32 @@ function convertDateToInputFormat(dateString) {
 }
 
 console.log('✅ Module UI chargé');
+
+// Exposer les fonctions nécessaires globalement (pour compatibilité avec anciens modules)
+if (typeof window !== 'undefined') {
+    window.loadOrders = loadOrders;
+    window.renderOrders = renderOrders;
+    window.applyFiltersAndSort = applyFiltersAndSort;
+    window.handleSearch = handleSearch;
+    window.handleFilterChange = handleFilterChange;
+    window.handleSortChange = handleSortChange;
+    window.openModalCreate = openModalCreate;
+    window.openModalEdit = openModalEdit;
+    window.closeModal = closeModal;
+    window.handleFormSubmit = handleFormSubmit;
+    window.handleQuickStateChange = handleQuickStateChange;
+    window.handleDeleteOrder = handleDeleteOrder;
+    window.closeDeleteModal = closeDeleteModal;
+    window.confirmDeleteOrder = confirmDeleteOrder;
+    window.showToast = showToast;
+    window.updateStats = updateStats;
+    window.updateChipCounts = updateChipCounts;
+    
+    // Variables globales exposées
+    window.allOrders = allOrders;
+    window.filteredOrders = filteredOrders;
+    window.currentFilter = currentFilter;
+    window.currentSort = currentSort;
+    window.searchQuery = searchQuery;
+}
 

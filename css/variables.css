@@ -92,14 +92,47 @@
     --breakpoint-wide: 1280px;
 }
 
-/* ===== THÈME SOMBRE (Optionnel, pour Phase 2) ===== */
+/* ===== THÈME SOMBRE ===== */
+[data-theme="dark"] {
+    --bg-main: #0F1419;
+    --bg-card: #1A1F26;
+    --text-primary: #E8EAED;
+    --text-secondary: #9AA0A6;
+    --text-disabled: #5F6368;
+    --border: #2D3339;
+    --border-focus: #81C784;
+    
+    /* Ombres plus subtiles en dark mode */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.6);
+    
+    /* Ajustement des couleurs de statut pour dark mode */
+    --status-pending: #FFD54F;
+    --status-ready: #64B5F6;
+    --status-delivered: #81C784;
+}
+
+/* Dark mode automatique selon préférence système */
 @media (prefers-color-scheme: dark) {
-    :root {
-        --bg-main: #121212;
-        --bg-card: #1E1E1E;
-        --text-primary: #FFFFFF;
-        --text-secondary: #B0B0B0;
-        --border: #2C2C2C;
+    :root:not([data-theme="light"]) {
+        --bg-main: #0F1419;
+        --bg-card: #1A1F26;
+        --text-primary: #E8EAED;
+        --text-secondary: #9AA0A6;
+        --text-disabled: #5F6368;
+        --border: #2D3339;
+        --border-focus: #81C784;
+        
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+        --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.6);
+        
+        --status-pending: #FFD54F;
+        --status-ready: #64B5F6;
+        --status-delivered: #81C784;
     }
 }
 

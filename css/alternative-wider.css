@@ -1,0 +1,34 @@
+/* ============================================
+   ALTERNATIVE : Tout à 1600px (Plus Large)
+   ============================================
+   
+   Pour utiliser cette alternative :
+   1. Remplacer les max-width: 1200px par 1600px dans main.css
+   2. Ou ajouter ce fichier APRÈS main.css dans index.html
+   
+   ============================================ */
+
+/* Header plus large */
+.header-content {
+    max-width: 1600px !important;
+}
+
+/* Sections plus larges */
+.controls-section,
+.orders-section {
+    max-width: 1600px !important;
+}
+
+/* Grid plus large sur tous les écrans desktop */
+@media (min-width: 1024px) {
+    .orders-grid {
+        max-width: 1600px !important;
+    }
+}
+
+/* Note : Avec 1600px, vous aurez :
+   - Plus d'espace utilisé sur grands écrans
+   - Cards légèrement plus petites
+   - Peut afficher jusqu'à 4 colonnes sur très grands écrans
+*/
+

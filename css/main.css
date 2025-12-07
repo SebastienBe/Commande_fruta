@@ -150,7 +150,7 @@ main {
 /* ===== CONTROLS SECTION ===== */
 .controls-section {
     margin-bottom: var(--spacing-lg);
-    max-width: 1600px;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
     padding: 0 var(--spacing-md);
@@ -239,7 +239,7 @@ main {
 .orders-section {
     position: relative;
     min-height: 200px;
-    max-width: 1600px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 var(--spacing-md);
 }
@@ -410,15 +410,15 @@ main {
 @media (min-width: 1280px) {
     .orders-grid {
         grid-template-columns: repeat(3, 1fr);
-        max-width: 1400px;
+        max-width: 1200px;
     }
 }
 
-/* Extra Large Desktop (1600px+) */
+/* Extra Large Desktop (1600px+) - même largeur pour cohérence */
 @media (min-width: 1600px) {
     .orders-grid {
         grid-template-columns: repeat(3, 1fr);
-        max-width: 1600px;
+        max-width: 1200px;
     }
 }
 

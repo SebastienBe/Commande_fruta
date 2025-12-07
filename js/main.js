@@ -5,6 +5,9 @@
 // Debounce timer pour la recherche
 let searchDebounceTimer = null;
 
+// Instances globales
+let pullToRefreshInstance = null;
+
 /* ============================================
    INITIALISATION
    ============================================ */
@@ -36,13 +39,59 @@ function initApp() {
         return;
     }
     
+    // 🎨 Initialiser le dark mode
+    DarkMode.init();
+    const darkModeToggle = DarkMode.createToggleButton();
+    document.body.appendChild(darkModeToggle);
+    console.log('🌙 Dark mode initialisé');
+    
+    // 🔄 Initialiser le pull to refresh
+    pullToRefreshInstance = new PullToRefresh(async () => {
+        console.log('🔄 Pull to refresh déclenché');
+        await loadOrders(false); // Ne pas afficher les skeletons sur refresh
+        showToast('✅ Commandes actualisées', 'success');
+    });
+    console.log('🔄 Pull to refresh initialisé');
+    
+    // 📱 Ajouter le haptic feedback aux boutons
+    initHapticFeedback();
+    
+    // 💾 Charger les filtres persistants
+    const savedFilters = PersistentFilters.load();
+    if (savedFilters) {
+        console.log('💾 Filtres sauvegardés chargés:', savedFilters);
+        if (savedFilters.status) currentFilter = savedFilters.status;
+        if (savedFilters.search) searchQuery = savedFilters.search;
+        if (savedFilters.sort) currentSort = savedFilters.sort;
+    }
+    
     // Initialiser les event listeners
     initEventListeners();
     
-    // Charger les commandes initiales
-    loadOrders();
+    // Appliquer les filtres sauvegardés à l'UI
+    if (savedFilters) {
+        PersistentFilters.applyToUI();
+    }
+    
+    // Charger les commandes initiales avec skeleton loaders
+    loadOrders(true);
     
     console.log('✅ Application initialisée avec succès');
+}
+
+/**
+ * Ajoute le haptic feedback aux boutons
+ */
+function initHapticFeedback() {
+    // Tous les boutons principaux
+    document.addEventListener('click', (e) => {
+        const button = e.target.closest('.btn, .chip, .fab');
+        if (button) {
+            Haptic.light();
+        }
+    }, { passive: true });
+    
+    console.log('📳 Haptic feedback initialisé');
 }
 
 /**
@@ -434,13 +483,22 @@ if (document.readyState === 'loading') {
     initApp();
 }
 
+// Exposer les fonctions utiles pour le debugging
+window.toggleDarkMode = () => DarkMode.toggle();
+window.triggerHaptic = (type = 'medium') => Haptic[type]();
+
 // Log de bienvenue
 console.log('%c🍎 Paniers Fruits - Gestion Commandes', 'color: #4CAF50; font-size: 20px; font-weight: bold;');
-console.log('%cVersion 1.0 - Mobile-First', 'color: #666; font-size: 12px;');
+console.log('%cVersion 2.0 - Mobile-First Enhanced', 'color: #666; font-size: 12px;');
+console.log('%c✨ Nouvelles fonctionnalités:', 'color: #FF9800; font-weight: bold;');
+console.log('  🌙 Dark Mode | 🔄 Pull to Refresh | 📳 Haptic Feedback');
+console.log('  💾 Filtres Persistants | ⚡ Skeleton Loaders | 🎨 Animations');
 console.log('%cFonctions disponibles dans la console:', 'color: #2196F3; font-weight: bold;');
 console.log('  • testApp() - Affiche l\'état de l\'application');
 console.log('  • testAPI() - Teste la connexion à l\'API');
 console.log('  • clearCacheAndReload() - Vide le cache et recharge');
 console.log('  • loadOrders() - Recharge les commandes');
 console.log('  • openModalCreate() - Ouvre le modal de création');
+console.log('  • toggleDarkMode() - Toggle le dark mode');
+console.log('  • triggerHaptic(type) - Test vibration (light/medium/heavy/success/error)');
 

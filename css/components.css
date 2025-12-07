@@ -545,6 +545,61 @@
     border-left: 4px solid var(--info);
 }
 
+/* ===== DARK MODE TOGGLE ===== */
+.dark-mode-toggle {
+    position: fixed;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    z-index: var(--z-fixed);
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background-color: var(--bg-card);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-md);
+}
+
+.dark-mode-toggle:hover {
+    transform: scale(1.1) rotate(20deg);
+    box-shadow: var(--shadow-lg);
+}
+
+.dark-mode-toggle:active {
+    transform: scale(0.95);
+}
+
+.dark-mode-toggle .theme-icon {
+    font-size: var(--font-size-xl);
+    transition: transform var(--transition-base);
+}
+
+/* Ajuster position sur mobile */
+@media (max-width: 768px) {
+    .dark-mode-toggle {
+        top: auto;
+        bottom: calc(var(--spacing-lg) + 80px);
+        right: var(--spacing-md);
+    }
+}
+
+/* ===== ICÔNES OPTIMISÉES ===== */
+.card-info-icon {
+    font-size: 1.25rem; /* Plus grand */
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+/* Icônes colorées selon le contexte */
+.icon-user { filter: hue-rotate(0deg); }
+.icon-email { color: #2196F3; }
+.icon-phone { color: #4CAF50; }
+.icon-basket { color: #FF9800; }
+.icon-calendar { color: #9C27B0; }
+
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
 
 /* Mobile (<768px) */
@@ -564,6 +619,21 @@
     
     .toast {
         width: 100%;
+    }
+}
+
+/* Sur mobile, utiliser bottom sheet au lieu de modal classique */
+@media (max-width: 768px) {
+    .modal-container.use-bottom-sheet {
+        position: fixed;
+        bottom: 0;
+        top: auto;
+        left: 0;
+        right: 0;
+        max-width: 100%;
+        max-height: 90vh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        animation: slideUpSheet 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 }
 
