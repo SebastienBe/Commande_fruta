@@ -50,7 +50,7 @@ class LongPress {
         const y = touch.clientY;
         
         this.timer = setTimeout(() => {
-            Haptic.medium();
+            Haptic.heavy(); // Vibration forte pour le long press
             this.showMenu(x, y);
         }, this.options.duration);
     }

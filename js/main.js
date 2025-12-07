@@ -83,15 +83,39 @@ function initApp() {
  * Ajoute le haptic feedback aux boutons
  */
 function initHapticFeedback() {
-    // Tous les boutons principaux
+    // Haptic feedback contextuels selon le type de bouton
     document.addEventListener('click', (e) => {
-        const button = e.target.closest('.btn, .chip, .fab');
-        if (button) {
+        // Bouton de suppression - vibration forte et distinctive
+        if (e.target.closest('.btn-delete, .btn-danger')) {
+            Haptic.heavy();
+            return;
+        }
+        
+        // Bouton principal (changement d'état, validation)
+        if (e.target.closest('.btn-primary, .btn-change-state')) {
+            Haptic.medium();
+            return;
+        }
+        
+        // FAB (nouvelle commande) - vibration moyenne
+        if (e.target.closest('.fab')) {
+            Haptic.medium();
+            return;
+        }
+        
+        // Chips (filtres) - vibration légère mais perceptible
+        if (e.target.closest('.chip')) {
+            Haptic.light();
+            return;
+        }
+        
+        // Autres boutons - vibration légère
+        if (e.target.closest('.btn')) {
             Haptic.light();
         }
     }, { passive: true });
     
-    console.log('📳 Haptic feedback initialisé');
+    console.log('📳 Haptic feedback initialisé (intensité améliorée)');
 }
 
 /**

@@ -39,9 +39,9 @@ const DarkMode = {
         // Mettre à jour l'icône du bouton
         this.updateToggleButton();
         
-        // Vibration légère sur changement manuel
-        if (save && 'vibrate' in navigator) {
-            navigator.vibrate(10);
+        // Vibration toggle sur changement manuel
+        if (save && typeof Haptic !== 'undefined') {
+            Haptic.toggle();
         }
     },
     

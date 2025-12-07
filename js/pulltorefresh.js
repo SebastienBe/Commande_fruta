@@ -96,9 +96,9 @@ class PullToRefresh {
         this.indicator.classList.add('refreshing');
         this.indicator.classList.remove('pulling');
         
-        // Vibration
-        if ('vibrate' in navigator) {
-            navigator.vibrate(20);
+        // Vibration de confirmation
+        if (typeof Haptic !== 'undefined') {
+            Haptic.confirm();
         }
         
         try {
