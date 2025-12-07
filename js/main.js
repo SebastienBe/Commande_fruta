@@ -68,6 +68,9 @@ function initApp() {
     // Initialiser les event listeners
     initEventListeners();
     
+    // Initialiser le menu mobile
+    setupMobileMenu();
+    
     // Appliquer les filtres sauvegardés à l'UI
     if (savedFilters) {
         PersistentFilters.applyToUI();
@@ -289,6 +292,78 @@ function initEventListeners() {
     
     console.log('✅ Event listeners initialisés');
 }
+
+/**
+ * Configure le menu mobile (hamburger)
+ */
+function setupMobileMenu() {
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const menuClose = document.getElementById('mobileMenuClose');
+    const menu = document.getElementById('mobileMenu');
+    const menuOverlay = document.getElementById('mobileMenuOverlay');
+    
+    if (!menuToggle || !menu || !menuClose) {
+        console.warn('⚠️ Éléments du menu mobile introuvables');
+        return;
+    }
+    
+    // Ouvrir le menu
+    menuToggle.addEventListener('click', () => {
+        openMobileMenu();
+        if (typeof Haptic !== 'undefined') Haptic.medium();
+    });
+    
+    // Fermer le menu
+    menuClose.addEventListener('click', () => {
+        closeMobileMenu();
+        if (typeof Haptic !== 'undefined') Haptic.light();
+    });
+    
+    // Fermer en cliquant sur l'overlay
+    if (menuOverlay) {
+        menuOverlay.addEventListener('click', () => {
+            closeMobileMenu();
+        });
+    }
+    
+    // Fermer avec la touche Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menu.getAttribute('aria-hidden') === 'false') {
+            closeMobileMenu();
+        }
+    });
+}
+
+/**
+ * Ouvre le menu mobile
+ */
+function openMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (menu && menuToggle) {
+        menu.setAttribute('aria-hidden', 'false');
+        menuToggle.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden'; // Empêcher le scroll du body
+    }
+}
+
+/**
+ * Ferme le menu mobile
+ */
+function closeMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    
+    if (menu && menuToggle) {
+        menu.setAttribute('aria-hidden', 'true');
+        menuToggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = ''; // Réactiver le scroll
+    }
+}
+
+// Exposer globalement pour les liens onclick
+window.closeMobileMenu = closeMobileMenu;
 
 /* ============================================
    HANDLERS

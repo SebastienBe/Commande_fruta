@@ -28,44 +28,56 @@
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/flat-design.css">
     <link rel="stylesheet" href="css/compositions.css">
+    <link rel="stylesheet" href="css/stats.css">
 </head>
 <body>
     
     <!-- ===== HEADER ===== -->
     <header class="app-header" role="banner">
         <div class="header-content">
-            <h1 class="header-title">
-                <span class="header-icon">
-                    <svg class="icon icon-2xl icon-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 3C8 3 5 6 5 10C5 14 8 21 12 21C16 21 19 14 19 10C19 6 16 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M12 3V2M12 2C11 2 10 2.5 9.5 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M10 7C10 7 11 9 13 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </span>
-                <span class="header-text">Paniers Fruits</span>
-            </h1>
-            
-            <!-- Boutons Navigation -->
-            <div style="display: flex; gap: var(--spacing-sm); align-items: center;">
-                <!-- Bouton Navigation Compositions -->
-                <a href="compositions.html" class="btn-nav-comp" aria-label="Gérer les compositions de paniers" title="Gestion des compositions">
-                    <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="btn-nav-text">Compositions</span>
-                </a>
+            <div class="header-top">
+                <h1 class="header-title">
+                    <span class="header-icon">
+                        <svg class="icon icon-2xl icon-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 3C8 3 5 6 5 10C5 14 8 21 12 21C16 21 19 14 19 10C19 6 16 3 12 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M12 3V2M12 2C11 2 10 2.5 9.5 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M10 7C10 7 11 9 13 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                    <span class="header-text">Paniers Fruits</span>
+                </h1>
                 
-                <!-- Bouton Navigation Statistiques -->
-                <a href="stats.html" class="btn-nav-comp" aria-label="Voir les statistiques" title="Statistiques mensuelles">
+                <!-- Bouton Menu Mobile -->
+                <button 
+                    id="mobileMenuToggle" 
+                    class="mobile-menu-toggle"
+                    aria-label="Ouvrir le menu de navigation"
+                    aria-expanded="false"
+                >
                     <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M7 16L12 11L16 15L21 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M21 10V3H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <span class="btn-nav-text">Stats</span>
-                </a>
+                </button>
+                
+                <!-- Navigation Desktop -->
+                <nav class="stats-header-actions desktop-nav" aria-label="Navigation principale">
+                    <a href="compositions.html" class="btn-nav" aria-label="Gérer les compositions" title="Compositions">
+                        <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="btn-nav-text">Compositions</span>
+                    </a>
+                    <a href="stats.html" class="btn-nav" aria-label="Voir les statistiques" title="Statistiques">
+                        <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 16L12 11L16 15L21 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 10V3H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="btn-nav-text">Stats</span>
+                    </a>
+                </nav>
             </div>
             
             <!-- Statistiques en temps réel -->
@@ -88,6 +100,50 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Menu Mobile -->
+        <nav id="mobileMenu" class="mobile-menu" aria-label="Menu de navigation mobile" aria-hidden="true">
+            <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <h2>Navigation</h2>
+                    <button 
+                        id="mobileMenuClose" 
+                        class="mobile-menu-close"
+                        aria-label="Fermer le menu"
+                    >
+                        <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mobile-menu-links">
+                    <a href="index.html" class="mobile-menu-link active" onclick="closeMobileMenu()">
+                        <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Commandes</span>
+                    </a>
+                    <a href="compositions.html" class="mobile-menu-link" onclick="closeMobileMenu()">
+                        <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Compositions</span>
+                    </a>
+                    <a href="stats.html" class="mobile-menu-link" onclick="closeMobileMenu()">
+                        <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 16L12 11L16 15L21 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 10V3H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Statistiques</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
     </header>
     
     <!-- ===== MAIN CONTENT ===== -->

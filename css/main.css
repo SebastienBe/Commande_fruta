@@ -50,14 +50,66 @@ main {
     margin: 0 auto;
 }
 
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    width: 100%;
+}
+
 .header-title {
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-bold);
     color: var(--text-primary);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: 0;
+}
+
+/* Utiliser les styles de stats.css pour la navigation desktop */
+.stats-header-actions.desktop-nav {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.stats-header-actions.desktop-nav .btn-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    background: var(--bg-main);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--transition-base);
+    border: 1px solid transparent;
+}
+
+.stats-header-actions.desktop-nav .btn-nav:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.stats-header-actions.desktop-nav .btn-nav-text {
+    display: inline;
+}
+
+@media (max-width: 768px) {
+    .stats-header-actions.desktop-nav {
+        display: none;
+    }
+    
+    .header-title {
+        margin-bottom: 0;
+    }
 }
 
 .header-icon {
