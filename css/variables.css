@@ -1,0 +1,105 @@
+/* ============================================
+   CSS VARIABLES - Design System
+   ============================================ */
+
+:root {
+    /* ===== COULEURS PRINCIPALES ===== */
+    --primary: #4CAF50;        /* Vert nature (paniers de fruits) */
+    --primary-dark: #388E3C;
+    --primary-light: #81C784;
+    --secondary: #FF9800;      /* Orange (accent) */
+    --secondary-dark: #F57C00;
+    
+    /* ===== ÉTATS DES COMMANDES ===== */
+    --status-pending: #FFC107;  /* Jaune (En préparation) */
+    --status-ready: #2196F3;    /* Bleu (Prêt) */
+    --status-delivered: #4CAF50; /* Vert (Livré) */
+    
+    /* ===== NEUTRALS ===== */
+    --bg-main: #F5F5F5;
+    --bg-card: #FFFFFF;
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --text-disabled: #BDBDBD;
+    --border: #E0E0E0;
+    --border-focus: #4CAF50;
+    
+    /* ===== FEEDBACK ===== */
+    --success: #4CAF50;
+    --error: #F44336;
+    --warning: #FF9800;
+    --info: #2196F3;
+    
+    /* ===== OMBRES ===== */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.15);
+    
+    /* ===== ESPACEMENTS ===== */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    
+    /* ===== BORDER RADIUS ===== */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+    
+    /* ===== TYPOGRAPHIE ===== */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    
+    /* Tailles de police (mobile-first) */
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;     /* 16px */
+    --font-size-lg: 1.125rem;   /* 18px */
+    --font-size-xl: 1.25rem;    /* 20px */
+    --font-size-2xl: 1.5rem;    /* 24px */
+    --font-size-3xl: 2rem;      /* 32px */
+    
+    /* Poids de police */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* ===== TRANSITIONS ===== */
+    --transition-fast: 150ms ease-in-out;
+    --transition-base: 200ms ease-in-out;
+    --transition-slow: 300ms ease-in-out;
+    
+    /* ===== Z-INDEX ===== */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-toast: 1060;
+    
+    /* ===== TOUCHES INTERACTIVES (Mobile-friendly) ===== */
+    --touch-target-min: 48px;   /* Minimum recommandé pour les boutons tactiles */
+    
+    /* ===== BREAKPOINTS (pour référence dans le code) ===== */
+    --breakpoint-mobile: 320px;
+    --breakpoint-tablet: 768px;
+    --breakpoint-desktop: 1024px;
+    --breakpoint-wide: 1280px;
+}
+
+/* ===== THÈME SOMBRE (Optionnel, pour Phase 2) ===== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-main: #121212;
+        --bg-card: #1E1E1E;
+        --text-primary: #FFFFFF;
+        --text-secondary: #B0B0B0;
+        --border: #2C2C2C;
+    }
+}
+

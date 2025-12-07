@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <!-- ===== META TAGS ===== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Interface admin de gestion des commandes de paniers de fruits - Mobile-first">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <title>🍎 Paniers Fruits - Gestion Commandes</title>
+    
+    <!-- ===== FAVICON (optionnel) ===== -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍎</text></svg>">
+    
+    <!-- ===== FONTS ===== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ===== STYLESHEETS ===== -->
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    
+    <!-- ===== HEADER ===== -->
+    <header class="app-header" role="banner">
+        <div class="header-content">
+            <h1 class="header-title">
+                <span class="header-icon">🍎</span>
+                <span class="header-text">Paniers Fruits</span>
+            </h1>
+            
+            <!-- Statistiques en temps réel -->
+            <div class="header-stats" id="headerStats" aria-live="polite">
+                <div class="stat-item">
+                    <span class="stat-value" id="statTotal">0</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-item stat-pending">
+                    <span class="stat-value" id="statPending">0</span>
+                    <span class="stat-label">En préparation</span>
+                </div>
+                <div class="stat-item stat-ready">
+                    <span class="stat-value" id="statReady">0</span>
+                    <span class="stat-label">Prêts</span>
+                </div>
+                <div class="stat-item stat-delivered">
+                    <span class="stat-value" id="statDelivered">0</span>
+                    <span class="stat-label">Livrés</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="app-main" role="main">
+        
+        <!-- Section Contrôles -->
+        <section class="controls-section" aria-label="Contrôles de filtrage et recherche">
+            
+            <!-- Barre de recherche -->
+            <div class="search-bar">
+                <label for="searchInput" class="sr-only">Rechercher une commande</label>
+                <div class="search-input-wrapper">
+                    <span class="search-icon" aria-hidden="true">🔍</span>
+                    <input 
+                        type="search" 
+                        id="searchInput" 
+                        class="search-input"
+                        placeholder="Rechercher par nom, email, téléphone..."
+                        autocomplete="off"
+                        aria-describedby="searchHint"
+                    >
+                    <button 
+                        type="button" 
+                        id="searchClear" 
+                        class="search-clear hidden"
+                        aria-label="Effacer la recherche"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <span id="searchHint" class="sr-only">Tapez au moins 2 caractères pour rechercher</span>
+            </div>
+            
+            <!-- Filtres rapides (chips) -->
+            <div class="filters-chips" role="group" aria-label="Filtres rapides par état">
+                <button 
+                    type="button" 
+                    class="chip chip-active" 
+                    data-filter="all"
+                    aria-pressed="true"
+                >
+                    Toutes <span class="chip-count" id="chipCountAll">0</span>
+                </button>
+                <button 
+                    type="button" 
+                    class="chip" 
+                    data-filter="En préparation"
+                    aria-pressed="false"
+                >
+                    🔧 En préparation <span class="chip-count" id="chipCountPending">0</span>
+                </button>
+                <button 
+                    type="button" 
+                    class="chip" 
+                    data-filter="Prêt"
+                    aria-pressed="false"
+                >
+                    ✅ Prêt <span class="chip-count" id="chipCountReady">0</span>
+                </button>
+                <button 
+                    type="button" 
+                    class="chip" 
+                    data-filter="Livré"
+                    aria-pressed="false"
+                >
+                    📦 Livré <span class="chip-count" id="chipCountDelivered">0</span>
+                </button>
+            </div>
+            
+            <!-- Actions rapides -->
+            <div class="actions-bar">
+                <button 
+                    type="button" 
+                    id="btnSort" 
+                    class="btn btn-secondary"
+                    aria-label="Trier les commandes"
+                    title="Trier par date de récupération"
+                >
+                    <span aria-hidden="true">📅</span>
+                    <span>Trier</span>
+                </button>
+                <button 
+                    type="button" 
+                    id="btnRefresh" 
+                    class="btn btn-secondary"
+                    aria-label="Rafraîchir la liste"
+                >
+                    <span aria-hidden="true">🔄</span>
+                    <span>Actualiser</span>
+                </button>
+            </div>
+        </section>
+        
+        <!-- Section Liste des commandes -->
+        <section class="orders-section" aria-label="Liste des commandes">
+            
+            <!-- Loader -->
+            <div id="loader" class="loader hidden" role="status" aria-live="polite">
+                <div class="loader-spinner"></div>
+                <p class="loader-text">Chargement des commandes...</p>
+            </div>
+            
+            <!-- Message vide / erreur -->
+            <div id="emptyState" class="empty-state hidden" role="status">
+                <div class="empty-icon">📦</div>
+                <h2 class="empty-title">Aucune commande</h2>
+                <p class="empty-description">Il n'y a pas encore de commande. Créez-en une pour commencer !</p>
+            </div>
+            
+            <!-- Grille de cards -->
+            <div id="ordersGrid" class="orders-grid" role="list">
+                <!-- Les cards seront injectées ici par JavaScript -->
+            </div>
+            
+        </section>
+        
+    </main>
+    
+    <!-- ===== BOUTON FLOTTANT "NOUVELLE COMMANDE" ===== -->
+    <button 
+        type="button" 
+        id="btnNewOrder" 
+        class="fab"
+        aria-label="Créer une nouvelle commande"
+        title="Nouvelle commande"
+    >
+        <span class="fab-icon" aria-hidden="true">+</span>
+        <span class="fab-text">Nouvelle Commande</span>
+    </button>
+    
+    <!-- ===== MODAL CRÉATION/ÉDITION ===== -->
+    <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="modalTitle" class="modal-title">Nouvelle Commande</h2>
+                <button 
+                    type="button" 
+                    id="modalClose" 
+                    class="modal-close"
+                    aria-label="Fermer le modal"
+                >
+                    <span aria-hidden="true">✕</span>
+                </button>
+            </div>
+            
+            <form id="orderForm" class="modal-body" novalidate>
+                <!-- Champ caché pour l'ID (mode édition) -->
+                <input type="hidden" id="orderId" name="orderId">
+                
+                <!-- Prénom -->
+                <div class="form-group">
+                    <label for="inputPrenom" class="form-label">
+                        Prénom <span class="required" aria-label="obligatoire">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="inputPrenom" 
+                        name="prenom" 
+                        class="form-input"
+                        placeholder="Jean"
+                        required
+                        autocomplete="given-name"
+                        aria-describedby="errorPrenom"
+                    >
+                    <span id="errorPrenom" class="form-error" role="alert"></span>
+                </div>
+                
+                <!-- Nom -->
+                <div class="form-group">
+                    <label for="inputNom" class="form-label">
+                        Nom <span class="required" aria-label="obligatoire">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="inputNom" 
+                        name="nom" 
+                        class="form-input"
+                        placeholder="Dupont"
+                        required
+                        autocomplete="family-name"
+                        aria-describedby="errorNom"
+                    >
+                    <span id="errorNom" class="form-error" role="alert"></span>
+                </div>
+                
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="inputEmail" class="form-label">
+                        Email <span class="required" aria-label="obligatoire">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        id="inputEmail" 
+                        name="email" 
+                        class="form-input"
+                        placeholder="jean.dupont@exemple.fr"
+                        required
+                        autocomplete="email"
+                        aria-describedby="errorEmail"
+                    >
+                    <span id="errorEmail" class="form-error" role="alert"></span>
+                </div>
+                
+                <!-- Téléphone -->
+                <div class="form-group">
+                    <label for="inputTelephone" class="form-label">
+                        Téléphone <span class="required" aria-label="obligatoire">*</span>
+                    </label>
+                    <input 
+                        type="tel" 
+                        id="inputTelephone" 
+                        name="telephone" 
+                        class="form-input"
+                        placeholder="06 12 34 56 78"
+                        required
+                        autocomplete="tel"
+                        pattern="0[67]( \d{2}){4}"
+                        aria-describedby="errorTelephone"
+                    >
+                    <span id="errorTelephone" class="form-error" role="alert"></span>
+                </div>
+                
+                <!-- Date de récupération -->
+                <div class="form-group">
+                    <label for="inputDateRecuperation" class="form-label">
+                        Date de récupération <span class="required" aria-label="obligatoire">*</span>
+                    </label>
+                    <input 
+                        type="date" 
+                        id="inputDateRecuperation" 
+                        name="dateRecuperation" 
+                        class="form-input"
+                        required
+                        aria-describedby="errorDateRecuperation"
+                    >
+                    <span id="errorDateRecuperation" class="form-error" role="alert"></span>
+                </div>
+                
+                <!-- Nombre de paniers -->
+                <div class="form-group">
+                    <label for="inputNombrePaniers" class="form-label">
+                        Nombre de paniers <span class="required" aria-label="obligatoire">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        id="inputNombrePaniers" 
+                        name="nombrePaniers" 
+                        class="form-input"
+                        placeholder="1"
+                        min="1"
+                        max="50"
+                        value="1"
+                        required
+                        aria-describedby="errorNombrePaniers"
+                    >
+                    <span id="errorNombrePaniers" class="form-error" role="alert"></span>
+                </div>
+                
+                <!-- État (uniquement en mode édition) -->
+                <div class="form-group" id="groupEtat" style="display: none;">
+                    <label for="inputEtat" class="form-label">
+                        État
+                    </label>
+                    <select 
+                        id="inputEtat" 
+                        name="etat" 
+                        class="form-select"
+                        aria-describedby="errorEtat"
+                    >
+                        <option value="En préparation">🔧 En préparation</option>
+                        <option value="Prêt">✅ Prêt</option>
+                        <option value="Livré">📦 Livré</option>
+                    </select>
+                    <span id="errorEtat" class="form-error" role="alert"></span>
+                </div>
+                
+            </form>
+            
+            <div class="modal-footer">
+                <button 
+                    type="button" 
+                    id="modalCancel" 
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </button>
+                <button 
+                    type="submit" 
+                    form="orderForm" 
+                    id="modalSubmit" 
+                    class="btn btn-primary"
+                >
+                    <span class="btn-text" id="submitText">Créer</span>
+                    <span class="btn-spinner hidden" id="submitSpinner" aria-hidden="true">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== MODAL DE CONFIRMATION SUPPRESSION ===== -->
+    <div id="modalConfirmDelete" class="modal-overlay hidden" role="dialog" aria-labelledby="confirmDeleteTitle" aria-modal="true">
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-content modal-confirm">
+            <div class="modal-header">
+                <h2 id="confirmDeleteTitle" class="modal-title">
+                    <span class="modal-icon-warning">⚠️</span>
+                    Confirmer la suppression
+                </h2>
+            </div>
+            
+            <div class="modal-body">
+                <p class="confirm-message">
+                    Êtes-vous sûr de vouloir supprimer cette commande ?
+                </p>
+                <p class="confirm-details" id="deleteOrderDetails">
+                    <!-- Détails de la commande à supprimer -->
+                </p>
+                <p class="confirm-warning">
+                    <strong>⚠️ Cette action est irréversible.</strong>
+                </p>
+            </div>
+            
+            <div class="modal-footer">
+                <button 
+                    type="button" 
+                    id="btnCancelDelete" 
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </button>
+                <button 
+                    type="button" 
+                    id="btnConfirmDelete" 
+                    class="btn btn-danger"
+                >
+                    <span class="btn-text" id="deleteText">Supprimer</span>
+                    <span class="btn-spinner hidden" id="deleteSpinner" aria-hidden="true">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+        <!-- Les toasts seront injectés ici par JavaScript -->
+    </div>
+    
+    <!-- ===== SCRIPTS ===== -->
+    <script src="js/config.js"></script>
+    <script src="js/validation.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+    
+</body>
+</html>
+
