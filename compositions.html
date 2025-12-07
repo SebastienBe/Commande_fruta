@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <!-- ===== META TAGS ===== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Gestion des compositions de paniers de fruits - Mobile-first">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <title>🎨 Gestion des Compositions - Paniers Fruits</title>
+    
+    <!-- ===== FAVICON ===== -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+    
+    <!-- ===== FONTS ===== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ===== STYLESHEETS ===== -->
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/flat-design.css">
+    <link rel="stylesheet" href="css/compositions.css">
+</head>
+<body>
+    
+    <!-- ===== HEADER ===== -->
+    <header class="app-header" role="banner">
+        <div class="header-content">
+            <div style="display: flex; align-items: center; gap: var(--spacing-md); flex-wrap: wrap; width: 100%;">
+                <h1 class="header-title" style="margin: 0;">
+                    <span class="header-icon">
+                        <svg class="icon icon-2xl icon-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <span class="header-text">Gestion des Compositions</span>
+                </h1>
+                
+                <div class="comp-header-actions">
+                    <a href="index.html" class="btn-back" aria-label="Retour aux commandes">
+                        <svg class="icon icon-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Retour</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Statistiques -->
+            <div class="header-stats" id="compStats" aria-live="polite">
+                <div class="stat-item">
+                    <span class="stat-value" id="statTotalComp">0</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-item stat-pending">
+                    <span class="stat-value" id="statActiveComp">0</span>
+                    <span class="stat-label">Actives</span>
+                </div>
+                <div class="stat-item stat-delivered">
+                    <span class="stat-value" id="statInactiveComp">0</span>
+                    <span class="stat-label">Inactives</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="app-main" role="main">
+        
+        <!-- Section Filtres -->
+        <section class="controls-section" aria-label="Filtres et contrôles">
+            <div class="comp-filters">
+                <div class="filter-group">
+                    <label class="filter-label" for="toggleActiveOnly">
+                        Actives uniquement
+                    </label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggleActiveOnly" aria-label="Filtrer les compositions actives uniquement">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label" for="filterDate">
+                        Filtrer par date
+                    </label>
+                    <input 
+                        type="date" 
+                        id="filterDate" 
+                        class="form-input"
+                        aria-label="Filtrer les compositions par date"
+                        style="max-width: 180px;"
+                    >
+                    <button 
+                        type="button" 
+                        id="btnClearDate" 
+                        class="btn btn-secondary"
+                        style="display: none;"
+                    >
+                        ✕ Effacer
+                    </button>
+                </div>
+                
+                <div class="filter-group" style="margin-left: auto;">
+                    <button 
+                        type="button" 
+                        id="btnRefreshComp" 
+                        class="btn btn-secondary"
+                        aria-label="Rafraîchir la liste"
+                    >
+                        <span aria-hidden="true">🔄</span>
+                        <span>Actualiser</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section Liste des compositions -->
+        <section class="orders-section" aria-label="Liste des compositions">
+            
+            <!-- Loader -->
+            <div id="loaderComp" class="loader hidden" role="status" aria-live="polite">
+                <div class="loader-spinner"></div>
+                <p class="loader-text">Chargement des compositions...</p>
+            </div>
+            
+            <!-- Message vide / erreur -->
+            <div id="emptyStateComp" class="empty-state hidden" role="status">
+                <div class="empty-icon">🎨</div>
+                <h2 class="empty-title">Aucune composition</h2>
+                <p class="empty-description">Créez une composition pour définir le contenu des paniers de fruits.</p>
+            </div>
+            
+            <!-- Grille de cards -->
+            <div id="compositionsGrid" class="orders-grid" role="list">
+                <!-- Les cards seront injectées ici par JavaScript -->
+            </div>
+            
+        </section>
+        
+    </main>
+    
+    <!-- ===== BOUTON FLOTTANT "NOUVELLE COMPOSITION" ===== -->
+    <button 
+        type="button" 
+        id="btnNewComp" 
+        class="fab"
+        aria-label="Créer une nouvelle composition"
+        title="Nouvelle composition"
+    >
+        <span class="fab-icon" aria-hidden="true">+</span>
+        <span class="fab-text">Nouvelle Composition</span>
+    </button>
+    
+    <!-- ===== MODAL CRÉATION/ÉDITION COMPOSITION ===== -->
+    <div id="modalComp" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalCompTitle">
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="modalCompTitle" class="modal-title">Nouvelle Composition</h2>
+                <button 
+                    type="button" 
+                    id="modalCompClose" 
+                    class="modal-close"
+                    aria-label="Fermer le modal"
+                >
+                    <span aria-hidden="true">✕</span>
+                </button>
+            </div>
+            
+            <form id="compForm" class="modal-body" novalidate>
+                <!-- Champ caché pour l'ID (mode édition) -->
+                <input type="hidden" id="compIdOriginal" name="idOriginal">
+                
+                <!-- Section Informations générales -->
+                <div class="comp-form-section">
+                    <h3 class="comp-form-section-title">📋 Informations générales</h3>
+                    
+                    <!-- ID -->
+                    <div class="form-group">
+                        <label for="inputCompId" class="form-label">
+                            Identifiant <span class="required" aria-label="obligatoire">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="inputCompId" 
+                            name="id" 
+                            class="form-input"
+                            placeholder="comp-ete-2025"
+                            required
+                            pattern="^comp-[a-z0-9\-]+$"
+                            aria-describedby="hintCompId errorCompId"
+                        >
+                        <span id="hintCompId" class="form-hint">Format: comp-saison-annee (ex: comp-ete-2025)</span>
+                        <span id="errorCompId" class="form-error" role="alert"></span>
+                    </div>
+                    
+                    <!-- Nom -->
+                    <div class="form-group">
+                        <label for="inputCompNom" class="form-label">
+                            Nom de la composition <span class="required" aria-label="obligatoire">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="inputCompNom" 
+                            name="nom" 
+                            class="form-input"
+                            placeholder="Panier Été 2025"
+                            required
+                            aria-describedby="errorCompNom"
+                        >
+                        <span id="errorCompNom" class="form-error" role="alert"></span>
+                    </div>
+                    
+                    <!-- Dates -->
+                    <div class="comp-dates-row">
+                        <div class="form-group">
+                            <label for="inputCompDateDebut" class="form-label">
+                                Date de début <span class="required" aria-label="obligatoire">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="inputCompDateDebut" 
+                                name="date_debut" 
+                                class="form-input"
+                                required
+                                aria-describedby="errorCompDateDebut"
+                            >
+                            <span id="errorCompDateDebut" class="form-error" role="alert"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inputCompDateFin" class="form-label">
+                                Date de fin <span class="required" aria-label="obligatoire">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="inputCompDateFin" 
+                                name="date_fin" 
+                                class="form-input"
+                                required
+                                aria-describedby="errorCompDateFin"
+                            >
+                            <span id="errorCompDateFin" class="form-error" role="alert"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Actif -->
+                    <div class="form-group">
+                        <label class="filter-label" for="inputCompActif" style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                            Composition active
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="inputCompActif" name="actif" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </label>
+                        <span class="form-hint">Une composition active sera utilisée pour les nouvelles commandes</span>
+                    </div>
+                </div>
+                
+                <!-- Section Composition des fruits -->
+                <div class="comp-form-section">
+                    <h3 class="comp-form-section-title">🍎 Composition des fruits</h3>
+                    
+                    <div id="fruitsContainer" class="comp-fruits-editor">
+                        <!-- Les lignes de fruits seront ajoutées dynamiquement ici -->
+                    </div>
+                    
+                    <button 
+                        type="button" 
+                        id="btnAddFruit" 
+                        class="btn-add-fruit"
+                    >
+                        <span aria-hidden="true">+</span>
+                        Ajouter un fruit
+                    </button>
+                    
+                    <div id="errorFruits" class="form-error" role="alert" style="margin-top: var(--spacing-sm);"></div>
+                </div>
+                
+            </form>
+            
+            <div class="modal-footer">
+                <button 
+                    type="button" 
+                    id="modalCompCancel" 
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </button>
+                <button 
+                    type="submit" 
+                    form="compForm" 
+                    id="modalCompSubmit" 
+                    class="btn btn-primary"
+                >
+                    <span class="btn-text" id="submitCompText">Créer</span>
+                    <span class="btn-spinner hidden" id="submitCompSpinner" aria-hidden="true">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== MODAL DE CONFIRMATION SUPPRESSION ===== -->
+    <div id="modalConfirmDeleteComp" class="modal-overlay hidden" role="dialog" aria-labelledby="confirmDeleteCompTitle" aria-modal="true">
+        <div class="modal-backdrop" aria-hidden="true"></div>
+        <div class="modal-content modal-confirm">
+            <div class="modal-header">
+                <h2 id="confirmDeleteCompTitle" class="modal-title">
+                    <span class="modal-icon-warning">⚠️</span>
+                    Confirmer la suppression
+                </h2>
+            </div>
+            
+            <div class="modal-body">
+                <p class="confirm-message">
+                    Êtes-vous sûr de vouloir supprimer cette composition ?
+                </p>
+                <p class="confirm-details" id="deleteCompDetails">
+                    <!-- Détails de la composition à supprimer -->
+                </p>
+                <p class="confirm-warning">
+                    <strong>⚠️ Attention :</strong> Si cette composition est utilisée par des commandes existantes, la suppression échouera.
+                </p>
+            </div>
+            
+            <div class="modal-footer">
+                <button 
+                    type="button" 
+                    id="btnCancelDeleteComp" 
+                    class="btn btn-secondary"
+                >
+                    Annuler
+                </button>
+                <button 
+                    type="button" 
+                    id="btnConfirmDeleteComp" 
+                    class="btn btn-danger"
+                >
+                    <span class="btn-text" id="deleteCompText">Supprimer</span>
+                    <span class="btn-spinner hidden" id="deleteCompSpinner" aria-hidden="true">
+                        <span class="spinner"></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+        <!-- Les toasts seront injectés ici par JavaScript -->
+    </div>
+    
+    <!-- ===== SCRIPTS ===== -->
+    <!-- Dépendances partagées -->
+    <script src="js/config.js"></script>
+    <script src="js/icons.js"></script>
+    
+    <!-- Utilitaires UX -->
+    <script src="js/haptic.js"></script>
+    <script src="js/darkmode.js"></script>
+    <script src="js/pulltorefresh.js"></script>
+    
+    <!-- Module compositions -->
+    <script src="js/compositions.js?v=2.0.2"></script>
+    
+</body>
+</html>
+

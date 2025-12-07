@@ -271,7 +271,7 @@ function formatTelephone(telephone) {
  * @returns {Object} - Données nettoyées
  */
 function sanitizeFormData(formData) {
-    return {
+    const sanitized = {
         prenom: formData.prenom.trim(),
         nom: formData.nom.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -280,6 +280,13 @@ function sanitizeFormData(formData) {
         dateRecuperation: formData.dateRecuperation,
         etat: formData.etat || ORDER_STATES.PENDING
     };
+    
+    // Ajouter composition_id seulement s'il existe
+    if (formData.composition_id) {
+        sanitized.composition_id = formData.composition_id;
+    }
+    
+    return sanitized;
 }
 
 // Export des fonctions pour les tests

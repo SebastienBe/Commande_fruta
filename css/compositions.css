@@ -1,0 +1,455 @@
+/* ============================================
+   COMPOSITIONS - Styles Spécifiques
+   ============================================ */
+
+/* ===== BOUTON NAVIGATION (dans header index.html) ===== */
+.btn-nav-comp {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--primary);
+    color: white;
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-sm);
+    margin-left: auto; /* Pousse le bouton à droite */
+}
+
+.btn-nav-comp:hover,
+.btn-nav-comp:focus {
+    background: var(--primary-dark);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.btn-nav-comp:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-nav-comp .icon {
+    flex-shrink: 0;
+}
+
+@media (max-width: 479px) {
+    .btn-nav-comp {
+        position: fixed;
+        bottom: calc(var(--spacing-2xl) + 70px); /* Au-dessus du FAB */
+        right: var(--spacing-md);
+        z-index: var(--z-fixed);
+        padding: var(--spacing-md);
+        border-radius: var(--radius-full);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .btn-nav-text {
+        display: none; /* Masquer le texte sur mobile */
+    }
+    
+    .btn-nav-comp .icon {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* ===== HEADER COMPOSITIONS PAGE ===== */
+.comp-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+    .comp-header-actions {
+        margin-top: 0;
+        margin-left: auto;
+    }
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-base);
+}
+
+.btn-back:hover,
+.btn-back:focus {
+    background: var(--bg-main);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ===== FILTRES COMPOSITIONS ===== */
+.comp-filters {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+    .comp-filters {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.filter-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border);
+    transition: var(--transition-base);
+    border-radius: var(--radius-full);
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: var(--transition-base);
+    border-radius: 50%;
+    box-shadow: var(--shadow-sm);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.toggle-switch input:focus + .toggle-slider {
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+/* ===== CARDS COMPOSITIONS ===== */
+.comp-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-md);
+    transition: all var(--transition-base);
+    border: 1px solid var(--border);
+}
+
+.comp-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.comp-card-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border);
+}
+
+.comp-card-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.comp-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+.comp-status-badge.active {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.comp-status-badge.inactive {
+    background: rgba(189, 189, 189, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.comp-status-badge.used {
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.comp-card-body {
+    margin-bottom: var(--spacing-md);
+}
+
+.comp-dates {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.comp-dates::before {
+    content: "📅";
+    font-size: 1rem;
+}
+
+.comp-fruits-list {
+    list-style: none;
+    padding: 0;
+    margin: var(--spacing-sm) 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-xs);
+}
+
+.comp-fruit-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--bg-main);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+}
+
+.comp-fruit-name {
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+
+.comp-fruit-qty {
+    font-weight: var(--font-weight-semibold);
+    color: var(--primary);
+}
+
+.comp-total {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(76, 175, 80, 0.05);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.comp-card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border);
+}
+
+.btn-icon-comp {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.btn-icon-comp.edit {
+    background: rgba(33, 150, 243, 0.1);
+    color: var(--info);
+}
+
+.btn-icon-comp.edit:hover {
+    background: rgba(33, 150, 243, 0.2);
+}
+
+.btn-icon-comp.delete {
+    background: rgba(244, 67, 54, 0.1);
+    color: var(--error);
+}
+
+.btn-icon-comp.delete:hover:not(.disabled) {
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.btn-icon-comp.delete.disabled {
+    background: rgba(189, 189, 189, 0.1);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ===== MODAL FORM COMPOSITIONS ===== */
+.comp-form-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.comp-form-section-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 2px solid var(--primary);
+}
+
+.comp-dates-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+@media (max-width: 479px) {
+    .comp-dates-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Liste fruits dynamique */
+.comp-fruits-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.comp-fruit-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: var(--spacing-sm);
+    align-items: start;
+}
+
+.comp-fruit-input-group {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--spacing-sm);
+}
+
+.btn-remove-fruit {
+    padding: var(--spacing-sm);
+    background: rgba(244, 67, 54, 0.1);
+    color: var(--error);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+}
+
+.btn-remove-fruit:hover {
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.btn-add-fruit {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--primary);
+    border: 1px dashed var(--primary);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    margin-top: var(--spacing-sm);
+}
+
+.btn-add-fruit:hover {
+    background: rgba(76, 175, 80, 0.2);
+    border-style: solid;
+}
+
+/* ===== RESPONSIVE MOBILE ===== */
+@media (max-width: 479px) {
+    .comp-filters {
+        padding: var(--spacing-sm);
+    }
+    
+    .comp-card {
+        padding: var(--spacing-sm);
+    }
+    
+    .comp-card-title {
+        font-size: var(--font-size-base);
+    }
+    
+    .comp-fruits-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-icon-comp {
+        font-size: 0.75rem;
+        padding: 6px;
+    }
+}
+

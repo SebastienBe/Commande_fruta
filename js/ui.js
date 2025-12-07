@@ -167,6 +167,10 @@ function renderOrders() {
     container.appendChild(fragment);
     
     console.log(`✅ ${filteredOrders.length} commande(s) affichée(s)`);
+    
+    // ✅ Charger et afficher les noms des compositions
+    console.log('🎨 Appel de loadCompositionNamesInCards avec', filteredOrders.length, 'commandes');
+    loadCompositionNamesInCards(filteredOrders);
 }
 
 /**
@@ -189,6 +193,10 @@ function createOrderCard(order) {
     const nombrePaniers = order.Nombre_Paniers || order.nombre_paniers || order.NombrePaniers || 0;
     const dateRecup = order.Date_Recuperation || order.date_recuperation || '';
     const etat = order.etat || order.Etat || order.status || ORDER_STATES.PENDING;
+    const compositionId = order.composition_id;
+    
+    // 🔍 Debug: afficher composition_id pour cette card
+    console.log(`🔍 [createOrderCard] Card #${id}: composition_id = "${compositionId}"`);
     
     // Classe CSS du badge selon l'état
     const badgeClass = etat === ORDER_STATES.DELIVERED ? 'badge-delivered' :
@@ -241,6 +249,16 @@ function createOrderCard(order) {
                     <span class="card-info-label">Récupération :</span> ${dateRecup || 'N/A'}
                 </span>
             </div>
+            ${compositionId ? `
+            <div class="card-info-item">
+                <span class="card-info-icon" aria-hidden="true">
+                    🎨
+                </span>
+                <span class="card-info-text" id="comp-name-${id}">
+                    <span class="card-info-label">Composition :</span> <span class="composition-name-loading">Chargement...</span>
+                </span>
+            </div>
+            ` : ''}
         </div>
         
         <div class="card-footer">
@@ -351,6 +369,9 @@ function openModalCreate() {
         inputDate.value = today;
     }
     
+    // Charger les compositions
+    loadCompositionsInSelect();
+    
     // Afficher le modal
     modal.classList.remove('hidden');
     
@@ -404,6 +425,20 @@ function openModalEdit(order) {
     if (submitText) submitText.textContent = 'Enregistrer';
     
     clearAllFormErrors();
+    
+    // Charger les compositions
+    loadCompositionsInSelect();
+    
+    // Pré-sélectionner la composition après chargement
+    setTimeout(() => {
+        const inputComposition = document.getElementById('inputComposition');
+        if (inputComposition && order.composition_id) {
+            inputComposition.value = order.composition_id;
+            console.log('✅ Composition pré-sélectionnée:', order.composition_id);
+        } else if (inputComposition) {
+            console.log('ℹ️ Aucune composition associée (composition_id:', order.composition_id, ')');
+        }
+    }, 500);
     
     // Afficher le modal
     modal.classList.remove('hidden');
@@ -486,6 +521,9 @@ async function handleQuickStateChange(order) {
         if (nombrePaniers !== null && nombrePaniers !== undefined) updateData.nombrePaniers = nombrePaniers;  // ← camelCase
         if (dateRecup) updateData.dateRecuperation = dateRecup;    // ← camelCase
         if (dateCreation) updateData.dateCreation = dateCreation;  // ← camelCase
+        
+        // Ajouter composition_id (peut être null)
+        updateData.composition_id = order.composition_id || null;
         
         console.log('📤 Données envoyées à l\'API (format modal):', updateData);
         
@@ -603,6 +641,13 @@ async function handleFormSubmit(event) {
     
     const form = event.target;
     
+    // 🔍 DEBUG : Vérifier le select composition
+    const selectComposition = document.getElementById('inputComposition');
+    console.log('🔍 Select composition element:', selectComposition);
+    console.log('🔍 Select composition value:', selectComposition?.value);
+    console.log('🔍 Select composition selectedIndex:', selectComposition?.selectedIndex);
+    console.log('🔍 Select composition selectedOption:', selectComposition?.options[selectComposition?.selectedIndex]);
+    
     // Récupérer les données du formulaire
     const formData = {
         prenom: document.getElementById('inputPrenom').value,
@@ -611,8 +656,11 @@ async function handleFormSubmit(event) {
         telephone: document.getElementById('inputTelephone').value,
         nombrePaniers: document.getElementById('inputNombrePaniers').value,
         dateRecuperation: document.getElementById('inputDateRecuperation').value,
+        composition_id: selectComposition?.value || null,
         etat: isEditMode ? document.getElementById('inputEtat').value : ORDER_STATES.PENDING
     };
+    
+    console.log('📋 Données du formulaire (avec composition_id):', formData);
     
     // Valider le formulaire
     const validation = validateOrderForm(formData);
@@ -891,9 +939,7 @@ if (typeof window !== 'undefined') {
     window.loadOrders = loadOrders;
     window.renderOrders = renderOrders;
     window.applyFiltersAndSort = applyFiltersAndSort;
-    window.handleSearch = handleSearch;
-    window.handleFilterChange = handleFilterChange;
-    window.handleSortChange = handleSortChange;
+    // handleSearch, handleFilterChange, handleSortChange sont dans main.js
     window.openModalCreate = openModalCreate;
     window.openModalEdit = openModalEdit;
     window.closeModal = closeModal;
@@ -912,5 +958,165 @@ if (typeof window !== 'undefined') {
     window.currentFilter = currentFilter;
     window.currentSort = currentSort;
     window.searchQuery = searchQuery;
+}
+
+/* ============================================
+   COMPOSITIONS - Charger dans le formulaire
+   ============================================ */
+
+/**
+ * Charge les compositions et les affiche dans le select
+ */
+async function loadCompositionsInSelect() {
+    console.log('🔍 loadCompositionsInSelect() appelée');
+    
+    const select = document.getElementById('inputComposition');
+    console.log('🔍 Select element:', select);
+    
+    if (!select) {
+        console.error('❌ Select "inputComposition" non trouvé !');
+        return;
+    }
+    
+    // Mettre un message de chargement
+    select.innerHTML = '<option value="">⏳ Chargement...</option>';
+    
+    try {
+        // Utiliser la fonction centralisée de config.js
+        const compositions = await getCompositions();
+        
+        console.log(`✅ ${compositions.length} compositions à afficher`);
+        
+        // Vider le select
+        select.innerHTML = '';
+        
+        // Option par défaut
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = compositions.length > 0 
+            ? '-- Sélectionner une composition --' 
+            : 'Aucune composition disponible';
+        select.appendChild(defaultOption);
+        
+        // Ajouter les compositions
+        compositions.forEach((comp, index) => {
+            console.log(`  ${index + 1}. ${comp.nom} (${comp.id_compo || comp.id})`);
+            
+            const option = document.createElement('option');
+            option.value = comp.id_compo || comp.id;
+            
+            // Afficher le nom et la période
+            try {
+                const debut = new Date(comp.date_debut).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+                const fin = new Date(comp.date_fin).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+                
+                option.textContent = `${comp.nom} (${debut} - ${fin})`;
+            } catch (e) {
+                // Si erreur de date, afficher juste le nom
+                option.textContent = comp.nom;
+            }
+            
+            // Marquer comme active
+            if (comp.actif) {
+                option.textContent += ' ✓';
+            }
+            
+            select.appendChild(option);
+        });
+        
+        console.log('✅ Select peuplé avec', compositions.length, 'options');
+        
+    } catch (error) {
+        console.error('❌ Erreur chargement compositions:', error);
+        console.error('Stack:', error.stack);
+        select.innerHTML = '<option value="">❌ Erreur de chargement</option>';
+    }
+}
+
+/**
+ * Charge les noms des compositions et les affiche dans les cards
+ * @param {Array} orders - Liste des commandes affichées
+ */
+async function loadCompositionNamesInCards(orders) {
+    console.log('🎨 [loadCompositionNamesInCards] Reçu', orders.length, 'commandes');
+    
+    // Filtrer les commandes qui ont une composition_id
+    const ordersWithComp = orders.filter(order => {
+        const hasComp = !!(order.composition_id);
+        console.log(`  📦 Commande #${order.id || order.ID}: composition_id = "${order.composition_id}" (${hasComp ? 'OUI' : 'NON'})`);
+        return hasComp;
+    });
+    
+    if (ordersWithComp.length === 0) {
+        console.log('ℹ️ Aucune commande avec composition_id');
+        return;
+    }
+    
+    console.log(`🎨 Chargement des noms de ${ordersWithComp.length} compositions...`);
+    
+    try {
+        // Récupérer toutes les compositions
+        const compositions = await getCompositions();
+        console.log('📋 Compositions disponibles:', compositions.length);
+        
+        // Créer un map id_compo → nom
+        const compositionsMap = {};
+        compositions.forEach(comp => {
+            const key = comp.id_compo || comp.id;
+            compositionsMap[key] = comp.nom;
+            console.log(`  🗂️ Map: "${key}" → "${comp.nom}"`);
+        });
+        
+        console.log('📋 Toutes les clés du mapping:', Object.keys(compositionsMap));
+        
+        // Mettre à jour chaque card
+        ordersWithComp.forEach(order => {
+            const id = order.id || order.ID;
+            const compId = order.composition_id;
+            const compNameElement = document.querySelector(`#comp-name-${id} .composition-name-loading`);
+            
+            console.log(`  🔍 Card #${id}: composition_id = "${compId}" (type: ${typeof compId})`);
+            console.log(`  🔍 Recherche dans le mapping: compositionsMap["${compId}"] = ${compositionsMap[compId] ? `"${compositionsMap[compId]}"` : 'UNDEFINED'}`);
+            
+            if (compNameElement) {
+                const compName = compositionsMap[compId];
+                
+                if (compName) {
+                    compNameElement.textContent = compName;
+                    compNameElement.classList.remove('composition-name-loading');
+                    compNameElement.classList.add('composition-name-loaded');
+                    console.log(`  ✅ Card #${id}: "${compId}" → "${compName}"`);
+                } else {
+                    // Si pas trouvé, afficher l'ID avec un warning
+                    console.warn(`  ⚠️ Card #${id}: Composition "${compId}" non trouvée dans le mapping !`);
+                    compNameElement.textContent = compId || 'Inconnue';
+                    compNameElement.classList.remove('composition-name-loading');
+                    compNameElement.classList.add('composition-name-error');
+                }
+            } else {
+                console.warn(`  ⚠️ Card #${id}: Élément .composition-name-loading introuvable !`);
+            }
+        });
+        
+        console.log('✅ Noms de compositions chargés');
+        
+    } catch (error) {
+        console.error('❌ Erreur chargement noms compositions:', error);
+        // En cas d'erreur, afficher les IDs
+        ordersWithComp.forEach(order => {
+            const id = order.id || order.ID;
+            const compNameElement = document.querySelector(`#comp-name-${id} .composition-name-loading`);
+            if (compNameElement) {
+                compNameElement.textContent = order.composition_id;
+                compNameElement.classList.remove('composition-name-loading');
+            }
+        });
+    }
+}
+
+// Exposer les fonctions globalement
+window.loadCompositionsInSelect = loadCompositionsInSelect;
+if (typeof loadCompositionNamesInCards !== 'undefined') {
+    window.loadCompositionNamesInCards = loadCompositionNamesInCards;
 }
 

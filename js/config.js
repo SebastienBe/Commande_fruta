@@ -150,10 +150,81 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
+/* ============================================
+   COMPOSITIONS - API Partagée
+   ============================================ */
+
+const COMP_API_URL = 'https://n8n-seb.sandbox-jerem.com/webhook/compositions';
+
+// Cache global des compositions
+let cachedCompositions = [];
+let compositionsCacheTime = 0;
+const COMPOSITIONS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Récupère les compositions (avec cache)
+ * @returns {Promise<Array>} Liste des compositions
+ */
+async function getCompositions() {
+    // Vérifier le cache
+    const now = Date.now();
+    if (cachedCompositions.length > 0 && (now - compositionsCacheTime) < COMPOSITIONS_CACHE_DURATION) {
+        console.log('📦 Compositions depuis le cache:', cachedCompositions.length);
+        return cachedCompositions;
+    }
+    
+    console.log('📡 Fetch compositions depuis API...');
+    
+    try {
+        const response = await fetch(COMP_API_URL);
+        
+        if (!response.ok) {
+            throw new Error(`Erreur ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        console.log('🔍 [getCompositions] Données brutes reçues:', JSON.stringify(data).substring(0, 500));
+        
+        // Parser les données (gérer les différents formats)
+        let compositions = [];
+        
+        if (data.compositions && data.compositions.compositions && Array.isArray(data.compositions.compositions)) {
+            compositions = data.compositions.compositions;
+            console.log('📋 Format: data.compositions.compositions');
+        } else if (data.compositions && Array.isArray(data.compositions)) {
+            compositions = data.compositions;
+            console.log('📋 Format: data.compositions');
+        } else if (Array.isArray(data)) {
+            compositions = data;
+            console.log('📋 Format: Array direct');
+        }
+        
+        // 🔍 Debug: afficher les id_compo de chaque composition
+        console.log('🔍 [getCompositions] id_compo dans les compositions:');
+        compositions.forEach((comp, idx) => {
+            console.log(`  ${idx + 1}. "${comp.nom}": id_compo = "${comp.id_compo}", id = ${comp.id}`);
+        });
+        
+        // Mettre en cache
+        cachedCompositions = compositions;
+        compositionsCacheTime = now;
+        
+        console.log('✅ Compositions chargées:', compositions.length);
+        
+        return compositions;
+        
+    } catch (error) {
+        console.error('❌ Erreur chargement compositions:', error);
+        return [];
+    }
+}
+
 // Log de confirmation du chargement de la configuration
 console.log('✅ Configuration chargée:', {
     API_BASE_URL,
     ENDPOINTS: Object.keys(API_ENDPOINTS).length,
-    STATES: Object.keys(ORDER_STATES).length
+    STATES: Object.keys(ORDER_STATES).length,
+    COMP_API_URL
 });
 

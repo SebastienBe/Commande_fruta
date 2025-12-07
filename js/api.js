@@ -113,6 +113,12 @@ async function getOrders() {
         if (Array.isArray(response) && response.length > 0 && response[0].data && Array.isArray(response[0].data)) {
             orders = response[0].data;
             console.log(`📋 Format: Array[0].data (n8n wrapper) - ${orders.length} items`);
+            
+            // 🔍 Debug: composition_id dans chaque commande
+            console.log('🔍 [getOrders] composition_id dans les données:');
+            orders.slice(0, 5).forEach((order, idx) => {
+                console.log(`  ${idx + 1}. Commande #${order.id || order.ID}: composition_id = "${order.composition_id}"`);
+            });
         }
         // CAS 2 : Objet avec propriété .data
         // Exemple: { success: true, data: [...] }
@@ -195,6 +201,7 @@ async function createOrder(orderData) {
             Telephone: orderData.telephone,
             Date_Recuperation: orderData.dateRecuperation,
             Nombre_Paniers: parseInt(orderData.nombrePaniers, 10),
+            composition_id: orderData.composition_id || null,
             Date_Creation: dateCreation,
             etat: orderData.etat || ORDER_STATES.PENDING
         };
@@ -225,6 +232,13 @@ async function updateOrder(orderId, updateData) {
             id: orderId,
             ...updateData
         };
+        
+        // S'assurer que composition_id est présent (même si null)
+        if (!data.hasOwnProperty('composition_id')) {
+            data.composition_id = null;
+        }
+        
+        console.log('📤 Données envoyées à l\'API UPDATE:', data);
         
         const result = await fetchAPI(API_ENDPOINTS.UPDATE_ORDER, 'POST', data);
         

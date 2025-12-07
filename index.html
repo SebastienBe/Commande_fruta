@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/flat-design.css">
+    <link rel="stylesheet" href="css/compositions.css">
 </head>
 <body>
     
@@ -43,6 +44,16 @@
                 </span>
                 <span class="header-text">Paniers Fruits</span>
             </h1>
+            
+            <!-- Bouton Navigation Compositions -->
+            <a href="compositions.html" class="btn-nav-comp" aria-label="Gérer les compositions de paniers" title="Gestion des compositions">
+                <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <span class="btn-nav-text">Compositions</span>
+            </a>
             
             <!-- Statistiques en temps réel -->
             <div class="header-stats" id="headerStats" aria-live="polite">
@@ -321,6 +332,23 @@
                         aria-describedby="errorNombrePaniers"
                     >
                     <span id="errorNombrePaniers" class="form-error" role="alert"></span>
+                </div>
+                
+                <!-- Composition du panier -->
+                <div class="form-group">
+                    <label for="inputComposition" class="form-label">
+                        Composition du panier
+                    </label>
+                    <select 
+                        id="inputComposition" 
+                        name="composition_id" 
+                        class="form-select"
+                        aria-describedby="hintComposition errorComposition"
+                    >
+                        <option value="">Chargement des compositions...</option>
+                    </select>
+                    <span id="hintComposition" class="form-hint">Sélectionnez la composition de fruits pour ce panier</span>
+                    <span id="errorComposition" class="form-error" role="alert"></span>
                 </div>
                 
                 <!-- État (uniquement en mode édition) -->
