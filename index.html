@@ -418,6 +418,18 @@
                     </select>
                     <span id="hintComposition" class="form-hint">Sélectionnez la composition de fruits pour ce panier</span>
                     <span id="errorComposition" class="form-error" role="alert"></span>
+                    
+                    <!-- Visualisation de la composition sélectionnée -->
+                    <div id="compositionPreview" class="composition-preview hidden" role="region" aria-label="Aperçu de la composition sélectionnée">
+                        <div class="composition-preview-header">
+                            <h3 class="composition-preview-title">Aperçu de la composition</h3>
+                        </div>
+                        <div class="composition-preview-body">
+                            <div id="compositionPreviewContent" class="composition-preview-content">
+                                <!-- Contenu généré dynamiquement -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- État (uniquement en mode édition) -->

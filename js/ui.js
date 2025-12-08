@@ -372,6 +372,9 @@ function openModalCreate() {
     // Charger les compositions
     loadCompositionsInSelect();
     
+    // Initialiser la prévisualisation de composition
+    setupCompositionPreview();
+    
     // Afficher le modal
     modal.classList.remove('hidden');
     
@@ -427,18 +430,21 @@ function openModalEdit(order) {
     clearAllFormErrors();
     
     // Charger les compositions
-    loadCompositionsInSelect();
-    
-    // Pré-sélectionner la composition après chargement
-    setTimeout(() => {
+    loadCompositionsInSelect().then(() => {
+        // Initialiser la prévisualisation de composition après chargement
+        setupCompositionPreview();
+        
+        // Pré-sélectionner la composition après chargement
         const inputComposition = document.getElementById('inputComposition');
         if (inputComposition && order.composition_id) {
             inputComposition.value = order.composition_id;
             console.log('✅ Composition pré-sélectionnée:', order.composition_id);
+            // Afficher la prévisualisation de la composition sélectionnée
+            showCompositionPreview(order.composition_id);
         } else if (inputComposition) {
             console.log('ℹ️ Aucune composition associée (composition_id:', order.composition_id, ')');
         }
-    }, 500);
+    });
     
     // Afficher le modal
     modal.classList.remove('hidden');
@@ -452,9 +458,15 @@ function openModalEdit(order) {
 function closeModal() {
     const modal = document.getElementById('modal');
     const form = document.getElementById('orderForm');
+    const preview = document.getElementById('compositionPreview');
     
     if (modal) {
         modal.classList.add('hidden');
+    }
+    
+    // Masquer la prévisualisation de composition
+    if (preview) {
+        preview.classList.add('hidden');
     }
     
     if (form) {
@@ -983,7 +995,7 @@ async function loadCompositionsInSelect() {
     
     if (!select) {
         console.error('❌ Select "inputComposition" non trouvé !');
-        return;
+        return Promise.resolve();
     }
     
     // Mettre un message de chargement
@@ -991,9 +1003,25 @@ async function loadCompositionsInSelect() {
     
     try {
         // Utiliser la fonction centralisée de config.js
-        const compositions = await getCompositions();
+        const allCompositions = await getCompositions();
         
-        console.log(`✅ ${compositions.length} compositions à afficher`);
+        // Filtrer pour n'afficher que les compositions actives
+        const compositions = allCompositions.filter(comp => {
+            // Normaliser le champ actif (gérer string "true"/"false", boolean, 1/0)
+            let isActive = false;
+            if (comp.actif !== undefined && comp.actif !== null) {
+                if (typeof comp.actif === 'string') {
+                    isActive = comp.actif.toLowerCase() === 'true' || comp.actif === '1';
+                } else if (typeof comp.actif === 'number') {
+                    isActive = comp.actif === 1;
+                } else if (typeof comp.actif === 'boolean') {
+                    isActive = comp.actif === true;
+                }
+            }
+            return isActive;
+        });
+        
+        console.log(`✅ ${compositions.length} composition(s) active(s) à afficher (sur ${allCompositions.length} total)`);
         
         // Vider le select
         select.innerHTML = '';
@@ -1003,10 +1031,10 @@ async function loadCompositionsInSelect() {
         defaultOption.value = '';
         defaultOption.textContent = compositions.length > 0 
             ? '-- Sélectionner une composition --' 
-            : 'Aucune composition disponible';
+            : 'Aucune composition active disponible';
         select.appendChild(defaultOption);
         
-        // Ajouter les compositions
+        // Ajouter les compositions actives
         compositions.forEach((comp, index) => {
             console.log(`  ${index + 1}. ${comp.nom} (${comp.id_compo || comp.id})`);
             
@@ -1024,20 +1052,18 @@ async function loadCompositionsInSelect() {
                 option.textContent = comp.nom;
             }
             
-            // Marquer comme active
-            if (comp.actif) {
-                option.textContent += ' ✓';
-            }
-            
             select.appendChild(option);
         });
         
-        console.log('✅ Select peuplé avec', compositions.length, 'options');
+        console.log('✅ Select peuplé avec', compositions.length, 'composition(s) active(s)');
+        
+        return Promise.resolve();
         
     } catch (error) {
         console.error('❌ Erreur chargement compositions:', error);
         console.error('Stack:', error.stack);
         select.innerHTML = '<option value="">❌ Erreur de chargement</option>';
+        return Promise.reject(error);
     }
 }
 
@@ -1122,8 +1148,134 @@ async function loadCompositionNamesInCards(orders) {
     }
 }
 
+/**
+ * Affiche la visualisation de la composition sélectionnée
+ * @param {String} compositionId - ID de la composition à afficher
+ */
+async function showCompositionPreview(compositionId) {
+    const preview = document.getElementById('compositionPreview');
+    const previewContent = document.getElementById('compositionPreviewContent');
+    
+    if (!preview || !previewContent) {
+        console.warn('⚠️ Éléments de prévisualisation non trouvés');
+        return;
+    }
+    
+    // Si aucune composition sélectionnée, masquer la prévisualisation
+    if (!compositionId || compositionId === '') {
+        preview.classList.add('hidden');
+        return;
+    }
+    
+    try {
+        // Récupérer toutes les compositions
+        const compositions = await getCompositions();
+        
+        // Trouver la composition sélectionnée
+        const selectedComposition = compositions.find(comp => 
+            (comp.id_compo || comp.id) === compositionId
+        );
+        
+        if (!selectedComposition) {
+            console.warn('⚠️ Composition non trouvée:', compositionId);
+            preview.classList.add('hidden');
+            return;
+        }
+        
+        // Parser composition_json si c'est une string
+        let compositionData = selectedComposition.composition_json || selectedComposition.composition || {};
+        if (typeof compositionData === 'string') {
+            try {
+                compositionData = JSON.parse(compositionData);
+            } catch (e) {
+                console.error('❌ Erreur parsing composition_json:', e);
+                compositionData = {};
+            }
+        }
+        
+        // Calculer le total de fruits
+        const totalFruits = Object.values(compositionData).reduce((sum, qty) => sum + parseInt(qty || 0), 0);
+        
+        // Générer le HTML de la prévisualisation
+        const fruitsList = Object.entries(compositionData)
+            .map(([nom, qty]) => `
+                <div class="composition-preview-fruit">
+                    <span class="composition-preview-fruit-name">${nom || 'Fruit'}</span>
+                    <span class="composition-preview-fruit-qty">×${qty || 0}</span>
+                </div>
+            `)
+            .join('');
+        
+        // Formater les dates
+        let dateRange = '';
+        try {
+            if (selectedComposition.date_debut && selectedComposition.date_fin) {
+                const debut = new Date(selectedComposition.date_debut).toLocaleDateString('fr-FR', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    year: 'numeric' 
+                });
+                const fin = new Date(selectedComposition.date_fin).toLocaleDateString('fr-FR', { 
+                    day: 'numeric', 
+                    month: 'short', 
+                    year: 'numeric' 
+                });
+                dateRange = `Du ${debut} au ${fin}`;
+            }
+        } catch (e) {
+            console.warn('⚠️ Erreur formatage dates:', e);
+        }
+        
+        previewContent.innerHTML = `
+            <div class="composition-preview-info">
+                <div class="composition-preview-name">${selectedComposition.nom || 'Sans nom'}</div>
+                ${dateRange ? `<div class="composition-preview-dates">${dateRange}</div>` : ''}
+                ${selectedComposition.actif ? '<div class="composition-preview-badge active">✓ Active</div>' : '<div class="composition-preview-badge inactive">⏸ Inactive</div>'}
+            </div>
+            <div class="composition-preview-fruits">
+                <div class="composition-preview-fruits-header">
+                    <span class="composition-preview-fruits-title">Fruits dans le panier</span>
+                    <span class="composition-preview-fruits-total">${totalFruits} fruits</span>
+                </div>
+                <div class="composition-preview-fruits-list">
+                    ${fruitsList || '<div class="composition-preview-empty">Aucun fruit défini</div>'}
+                </div>
+            </div>
+        `;
+        
+        // Afficher la prévisualisation
+        preview.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('❌ Erreur affichage prévisualisation:', error);
+        preview.classList.add('hidden');
+    }
+}
+
+/**
+ * Initialise les event listeners pour la prévisualisation de composition
+ */
+function setupCompositionPreview() {
+    const selectComposition = document.getElementById('inputComposition');
+    
+    if (!selectComposition) {
+        console.warn('⚠️ Select composition non trouvé pour la prévisualisation');
+        return;
+    }
+    
+    // Écouter les changements de sélection
+    selectComposition.addEventListener('change', (e) => {
+        const selectedId = e.target.value;
+        showCompositionPreview(selectedId);
+    });
+    
+    console.log('✅ Prévisualisation de composition initialisée');
+}
+
 // Exposer les fonctions globalement
 window.loadCompositionsInSelect = loadCompositionsInSelect;
+window.showCompositionPreview = showCompositionPreview;
+window.setupCompositionPreview = setupCompositionPreview;
 if (typeof loadCompositionNamesInCards !== 'undefined') {
     window.loadCompositionNamesInCards = loadCompositionNamesInCards;
 }

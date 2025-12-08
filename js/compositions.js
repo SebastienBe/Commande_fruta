@@ -11,7 +11,7 @@
 const COMP_API_ENDPOINTS = {
     GET_ALL: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions',
     CREATE: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions/create',
-    UPDATE: 'https://n8n-seb.sandbox-jerem.com/webhook-test/compositions/update',
+    UPDATE: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions/update',
     DELETE: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions/delete',
     GET_ACTIVE: 'https://n8n-seb.sandbox-jerem.com/webhook/composition-active'
 };

@@ -456,12 +456,94 @@ async function recalculateStats(auto = false) {
 
 /**
  * Agrège les statistiques pour calculer les KPIs
- * @returns {Object} Données agrégées
+ * @returns {Promise<Object>} Données agrégées
  */
-function aggregateStats() {
+/**
+ * Parse une date au format DD/MM/YYYY ou ISO et retourne un objet Date
+ * @param {String} dateStr - Date au format DD/MM/YYYY ou ISO
+ * @returns {Date|null} - Objet Date ou null si invalide
+ */
+function parseOrderDate(dateStr) {
+    if (!dateStr) return null;
+    
+    try {
+        // Format DD/MM/YYYY
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // Mois 0-indexed
+                const year = parseInt(parts[2], 10);
+                return new Date(year, month, day);
+            }
+        }
+        
+        // Format ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:mm:ss)
+        return new Date(dateStr);
+    } catch (error) {
+        console.warn('⚠️ Erreur parsing date:', dateStr, error);
+        return null;
+    }
+}
+
+async function aggregateStats() {
+    // Charger le nombre de commandes (rows dans GET_ALL orders) filtrées par année/mois
+    let nombreCommandes = 0;
+    try {
+        let allOrders = [];
+        
+        // Utiliser la fonction getOrders de api.js si disponible
+        if (typeof getOrders === 'function') {
+            allOrders = await getOrders();
+        } else {
+            // Fallback: charger directement depuis l'API
+            const response = await fetch('https://n8n-seb.sandbox-jerem.com/webhook/orders');
+            if (response.ok) {
+                const data = await response.json();
+                // Gérer différents formats de réponse n8n
+                if (Array.isArray(data) && data.length > 0 && data[0].data && Array.isArray(data[0].data)) {
+                    allOrders = data[0].data;
+                } else if (data.data && Array.isArray(data.data)) {
+                    allOrders = data.data;
+                } else if (data.success && data.data && Array.isArray(data.data)) {
+                    allOrders = data.data;
+                } else if (Array.isArray(data)) {
+                    allOrders = data;
+                }
+            }
+        }
+        
+        // Filtrer les commandes selon l'année et le mois sélectionnés
+        const filteredOrders = allOrders.filter(order => {
+            const dateRecup = order.Date_Recuperation || order.date_recuperation || order.DateRecuperation || '';
+            if (!dateRecup) return false;
+            
+            const date = parseOrderDate(dateRecup);
+            if (!date || isNaN(date.getTime())) return false;
+            
+            const orderYear = date.getFullYear();
+            const orderMonth = date.getMonth() + 1; // Mois 1-indexed
+            
+            // Filtrer par année
+            if (orderYear !== currentYear) return false;
+            
+            // Filtrer par mois si un mois est sélectionné
+            if (currentMonth !== null && orderMonth !== currentMonth) return false;
+            
+            return true;
+        });
+        
+        nombreCommandes = filteredOrders.length;
+        console.log(`📊 Nombre de commandes filtrées (année=${currentYear}, mois=${currentMonth || 'tous'}): ${nombreCommandes} sur ${allOrders.length} total`);
+        
+    } catch (error) {
+        console.error('❌ Erreur chargement commandes pour KPI:', error);
+    }
+    
     if (currentStats.length === 0) {
         return {
-            totalCommandes: 0,
+            nombreCommandes,
+            totalPaniers: 0,
             totalFruits: 0,
             topFruit: { nom: '-', quantite: 0 },
             fruitsParMois: [],
@@ -469,8 +551,8 @@ function aggregateStats() {
         };
     }
     
-    // Total commandes
-    const totalCommandes = currentStats.reduce((sum, stat) => sum + (stat.nombre_commandes || 0), 0);
+    // Total paniers (anciennement "totalCommandes")
+    const totalPaniers = currentStats.reduce((sum, stat) => sum + (stat.nombre_commandes || 0), 0);
     
     // Total fruits et répartition
     const repartitionFruits = {};
@@ -499,7 +581,8 @@ function aggregateStats() {
     }));
     
     return {
-        totalCommandes,
+        nombreCommandes,
+        totalPaniers,
         totalFruits,
         topFruit: topFruitEntry,
         fruitsParMois,
@@ -512,8 +595,8 @@ function aggregateStats() {
 /**
  * Met à jour toute l'interface
  */
-function updateUI() {
-    const aggregated = aggregateStats();
+async function updateUI() {
+    const aggregated = await aggregateStats();
     
     // Afficher/masquer empty state
     const emptyState = document.getElementById('statsEmptyState');
@@ -543,11 +626,18 @@ function updateUI() {
  * @param {Object} data - Données agrégées
  */
 function renderKPIs(data) {
-    // KPI Commandes
+    // KPI Commandes (nombre de rows dans GET_ALL orders)
     document.getElementById('kpi-commandes').innerHTML = `
         <div class="kpi-icon">📦</div>
-        <div class="kpi-value">${data.totalCommandes.toLocaleString('fr-FR')}</div>
+        <div class="kpi-value">${(data.nombreCommandes || 0).toLocaleString('fr-FR')}</div>
         <div class="kpi-label">Commandes</div>
+    `;
+    
+    // KPI Nombre panier
+    document.getElementById('kpi-paniers').innerHTML = `
+        <div class="kpi-icon">🛒</div>
+        <div class="kpi-value">${(data.totalPaniers || 0).toLocaleString('fr-FR')}</div>
+        <div class="kpi-label">Nombre panier</div>
     `;
     
     // KPI Fruits
