@@ -11,7 +11,7 @@
 const COMP_API_ENDPOINTS = {
     GET_ALL: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions',
     CREATE: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions/create',
-    UPDATE: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions/update',
+    UPDATE: 'https://n8n-seb.sandbox-jerem.com/webhook-test/compositions/update',
     DELETE: 'https://n8n-seb.sandbox-jerem.com/webhook/compositions/delete',
     GET_ACTIVE: 'https://n8n-seb.sandbox-jerem.com/webhook/composition-active'
 };
@@ -761,11 +761,15 @@ function openCompModal(comp = null) {
         submitBtn.textContent = 'Enregistrer';
         currentComposition = comp;
         
+        // Utiliser id_compo si disponible, sinon id
+        const compId = comp.id_compo || comp.id;
+        console.log('🔍 ID utilisé pour édition:', compId, 'comp:', comp);
+        
         // Remplir le formulaire
-        document.getElementById('compIdOriginal').value = comp.id;
-        document.getElementById('inputCompId').value = comp.id;
+        document.getElementById('compIdOriginal').value = compId;
+        document.getElementById('inputCompId').value = compId;
         document.getElementById('inputCompId').readOnly = true; // ID non modifiable en édition
-        document.getElementById('inputCompNom').value = comp.nom;
+        document.getElementById('inputCompNom').value = comp.nom || '';
         document.getElementById('inputCompDateDebut').value = formatDateTimeLocal(comp.date_debut);
         document.getElementById('inputCompDateFin').value = formatDateTimeLocal(comp.date_fin);
         document.getElementById('inputCompActif').checked = comp.actif;
@@ -929,7 +933,10 @@ async function handleCompFormSubmit(e) {
     try {
         if (currentComposition) {
             // MODE ÉDITION
-            await updateComposition(currentComposition.id, formData);
+            // Utiliser id_compo si disponible, sinon id
+            const updateId = currentComposition.id_compo || currentComposition.id;
+            console.log('🔍 ID utilisé pour update:', updateId, 'currentComposition:', currentComposition);
+            await updateComposition(updateId, formData);
             showNotification('Composition mise à jour avec succès ! ✅', 'success');
             if (typeof Haptic !== 'undefined') Haptic.success();
         } else {
@@ -1107,15 +1114,24 @@ function editComposition(id) {
     if (typeof Haptic !== 'undefined') Haptic.medium();
     
     console.log('✏️ Édition composition:', id);
+    console.log('🔍 Recherche dans allCompositions:', allCompositions.map(c => ({ id: c.id, id_compo: c.id_compo })));
     
-    const comp = allCompositions.find(c => c.id === id);
+    // Chercher par id ou id_compo (pour gérer tous les cas)
+    const comp = allCompositions.find(c => 
+        c.id === id || 
+        c.id_compo === id ||
+        (c.id && String(c.id) === String(id)) ||
+        (c.id_compo && String(c.id_compo) === String(id))
+    );
     
     if (!comp) {
         console.error('❌ Composition non trouvée:', id);
+        console.error('📋 Compositions disponibles:', allCompositions.map(c => ({ id: c.id, id_compo: c.id_compo, nom: c.nom })));
         showNotification('Composition non trouvée', 'error');
         return;
     }
     
+    console.log('✅ Composition trouvée:', comp);
     openCompModal(comp);
 }
 

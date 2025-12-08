@@ -1,0 +1,171 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "compositions/update",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "930dfc48-f60b-43a7-88b2-9f56d404ce7d",
+      "name": "Webhook PUT Composition",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        0
+      ],
+      "webhookId": "update-composition"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "4cc0p8TfMByxcJUd",
+          "mode": "list",
+          "cachedResultName": "Compositions Paniers",
+          "cachedResultUrl": "/projects/Q9Z1ZGJIkioOS2Ur/datatables/4cc0p8TfMByxcJUd"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_compo",
+              "keyValue": "={{ $json.body.id_compo }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nom": "={{ $json.body.nom }}",
+            "date_debut": "={{ $json.body.date_debut }}",
+            "date_fin": "={{ $json.body.date_fin }}",
+            "actif": "={{ $json.body.actif }}",
+            "composition_json": "={{ $json.body.composition_json }}",
+            "id_compo": "={{ $json.body.id_compo }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_compo",
+              "displayName": "id_compo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "nom",
+              "displayName": "nom",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date_debut",
+              "displayName": "date_debut",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date_fin",
+              "displayName": "date_fin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "composition_json",
+              "displayName": "composition_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "actif",
+              "displayName": "actif",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "58c1d3fa-6033-49f9-a3c3-0d67efff2ec7",
+      "name": "UPDATE Composition",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -48
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "022e99d8-937a-4df3-b51b-eac629ba4b25",
+      "name": "Success 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -16
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook PUT Composition": {
+      "main": [
+        [
+          {
+            "node": "UPDATE Composition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UPDATE Composition": {
+      "main": [
+        [
+          {
+            "node": "Success 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "2ae02784f0aca99443c6553ead2743bad4daead1feb14a1d1d4b77375e1a0c75"
+  }
+}
+
