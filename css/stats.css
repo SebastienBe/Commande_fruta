@@ -241,6 +241,56 @@
     align-items: end;
 }
 
+/* Navigation mois avec flèches */
+.month-navigation-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.btn-month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    background-color: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+}
+
+.btn-month-nav:hover:not(:disabled) {
+    background-color: var(--bg-main);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: scale(1.05);
+}
+
+.btn-month-nav:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.btn-month-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-month-nav .icon {
+    width: 18px;
+    height: 18px;
+}
+
+.month-navigation-wrapper .form-select {
+    flex: 1;
+    min-width: 0;
+}
+
 @media (max-width: 768px) {
     .stats-filters-container {
         grid-template-columns: 1fr;

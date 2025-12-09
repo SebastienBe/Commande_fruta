@@ -62,7 +62,19 @@ function initApp() {
         console.log('💾 Filtres sauvegardés chargés:', savedFilters);
         if (savedFilters.status) currentFilter = savedFilters.status;
         if (savedFilters.search) searchQuery = savedFilters.search;
-        if (savedFilters.sort) currentSort = savedFilters.sort;
+        if (savedFilters.sort) {
+            // Compatibilité avec l'ancien format (asc/desc)
+            if (savedFilters.sort === 'asc' || savedFilters.sort === 'desc') {
+                currentSort = `date-${savedFilters.sort}`;
+            } else {
+                currentSort = savedFilters.sort;
+            }
+        }
+    } else {
+        // Si aucun filtre sauvegardé, activer "En préparation" par défaut
+        currentFilter = 'En préparation';
+        currentSort = 'date-asc'; // Tri par défaut : date croissante
+        console.log('🔧 Filtre par défaut activé: En préparation');
     }
     
     // Initialiser les event listeners
@@ -71,10 +83,16 @@ function initApp() {
     // Initialiser le menu mobile
     setupMobileMenu();
     
-    // Appliquer les filtres sauvegardés à l'UI
+    // Appliquer les filtres sauvegardés à l'UI ou activer le filtre par défaut
     if (savedFilters) {
         PersistentFilters.applyToUI();
+    } else {
+        // Activer visuellement le chip "En préparation"
+        activateFilterChip('En préparation');
     }
+    
+    // Initialiser l'affichage du bouton de tri
+    updateSortButton();
     
     // Charger les commandes initiales avec skeleton loaders
     loadOrders(true);
@@ -245,10 +263,45 @@ function initEventListeners() {
     
     // === ACTIONS BAR ===
     const btnSort = document.getElementById('btnSort');
+    const sortMenu = document.getElementById('sortMenu');
     const btnRefresh = document.getElementById('btnRefresh');
     
-    if (btnSort) {
-        btnSort.addEventListener('click', handleSort);
+    // Menu déroulant de tri
+    if (btnSort && sortMenu) {
+        // Ouvrir/fermer le menu
+        btnSort.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isExpanded = btnSort.getAttribute('aria-expanded') === 'true';
+            btnSort.setAttribute('aria-expanded', !isExpanded);
+            sortMenu.classList.toggle('hidden');
+            
+            if (typeof Haptic !== 'undefined') Haptic.light();
+        });
+        
+        // Gérer les clics sur les options du menu
+        const sortMenuItems = sortMenu.querySelectorAll('.sort-menu-item');
+        sortMenuItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sortType = item.getAttribute('data-sort');
+                handleSortChange(sortType);
+                sortMenu.classList.add('hidden');
+                btnSort.setAttribute('aria-expanded', 'false');
+                
+                if (typeof Haptic !== 'undefined') Haptic.medium();
+            });
+        });
+        
+        // Fermer le menu si on clique ailleurs
+        document.addEventListener('click', (e) => {
+            if (!btnSort.contains(e.target) && !sortMenu.contains(e.target)) {
+                sortMenu.classList.add('hidden');
+                btnSort.setAttribute('aria-expanded', 'false');
+            }
+        });
+        
+        // Initialiser l'affichage du bouton
+        updateSortButton();
     }
     
     if (btnRefresh) {
@@ -370,6 +423,24 @@ window.closeMobileMenu = closeMobileMenu;
    ============================================ */
 
 /**
+ * Active visuellement un chip de filtre
+ * @param {string} filter - Filtre à activer
+ */
+function activateFilterChip(filter) {
+    const allChips = document.querySelectorAll('.filters-chips .chip');
+    allChips.forEach(chip => {
+        const chipFilter = chip.getAttribute('data-filter');
+        if (chipFilter === filter) {
+            chip.classList.add('chip-active');
+            chip.setAttribute('aria-pressed', 'true');
+        } else {
+            chip.classList.remove('chip-active');
+            chip.setAttribute('aria-pressed', 'false');
+        }
+    });
+}
+
+/**
  * Gère le changement de filtre
  * @param {string} filter - Filtre sélectionné
  * @param {HTMLElement} chipElement - Élément chip cliqué
@@ -406,21 +477,80 @@ function handleSearch(query) {
 }
 
 /**
- * Gère le tri (toggle asc/desc)
+ * Met à jour l'affichage du bouton de tri
  */
-function handleSort() {
-    currentSort = currentSort === 'asc' ? 'desc' : 'asc';
-    
+function updateSortButton() {
     const btnSort = document.getElementById('btnSort');
-    if (btnSort) {
-        const icon = currentSort === 'asc' ? '📅↑' : '📅↓';
-        btnSort.innerHTML = `<span aria-hidden="true">${icon}</span><span>Trier</span>`;
+    const sortIcon = document.getElementById('sortIcon');
+    const sortText = document.getElementById('sortText');
+    const sortMenu = document.getElementById('sortMenu');
+    
+    if (!btnSort || !sortIcon || !sortText) return;
+    
+    // Mettre à jour l'icône et le texte selon le tri actuel
+    let icon = '📅↑';
+    let text = 'Trier';
+    
+    if (currentSort === 'date-asc') {
+        icon = '📅↑';
+        text = 'Date ↑';
+    } else if (currentSort === 'date-desc') {
+        icon = '📅↓';
+        text = 'Date ↓';
+    } else if (currentSort === 'name-asc') {
+        icon = '👤 A-Z';
+        text = 'Nom A-Z';
+    } else if (currentSort === 'name-desc') {
+        icon = '👤 Z-A';
+        text = 'Nom Z-A';
     }
     
-    console.log(`🔄 Tri changé: ${currentSort}`);
+    sortIcon.textContent = icon;
+    sortText.textContent = text;
     
+    // Mettre à jour les checkmarks dans le menu
+    if (sortMenu) {
+        const menuItems = sortMenu.querySelectorAll('.sort-menu-item');
+        menuItems.forEach(item => {
+            const check = item.querySelector('.sort-menu-check');
+            if (item.getAttribute('data-sort') === currentSort) {
+                item.classList.add('active');
+                if (check) check.style.display = 'inline';
+            } else {
+                item.classList.remove('active');
+                if (check) check.style.display = 'none';
+            }
+        });
+    }
+}
+
+/**
+ * Gère le changement de tri
+ * @param {string} sortType - Type de tri (date-asc, date-desc, name-asc, name-desc)
+ */
+function handleSortChange(sortType) {
+    currentSort = sortType;
+    
+    console.log(`🔄 Tri changé: ${sortType}`);
+    
+    updateSortButton();
     applyFiltersAndSort();
     renderOrders();
+}
+
+/**
+ * Gère le tri (toggle asc/desc) - Fonction legacy pour compatibilité
+ */
+function handleSort() {
+    // Si c'est un tri par date, basculer entre asc et desc
+    if (currentSort.startsWith('date-')) {
+        currentSort = currentSort === 'date-asc' ? 'date-desc' : 'date-asc';
+    } else {
+        // Sinon, passer à date-asc par défaut
+        currentSort = 'date-asc';
+    }
+    
+    handleSortChange(currentSort);
 }
 
 /**

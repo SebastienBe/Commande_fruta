@@ -5,8 +5,8 @@
 // Variables globales pour le state
 let allOrders = [];
 let filteredOrders = [];
-let currentFilter = 'all';
-let currentSort = 'asc'; // asc ou desc
+let currentFilter = 'En préparation'; // Par défaut : filtre "En préparation"
+let currentSort = 'date-asc'; // date-asc, date-desc, name-asc, name-desc
 let searchQuery = '';
 let isEditMode = false;
 
@@ -116,16 +116,34 @@ function applyFiltersAndSort() {
         });
     }
     
-    // 3. Trier par date de récupération
+    // 3. Trier selon le type de tri sélectionné
     filteredOrders.sort((a, b) => {
+        if (currentSort.startsWith('date-')) {
+            // Tri par date de récupération
+            const dateA = parseDateDDMMYYYY(a.Date_Recuperation || a.date_recuperation || '');
+            const dateB = parseDateDDMMYYYY(b.Date_Recuperation || b.date_recuperation || '');
+            
+            if (currentSort === 'date-asc') {
+                return dateA - dateB;
+            } else {
+                return dateB - dateA;
+            }
+        } else if (currentSort.startsWith('name-')) {
+            // Tri par nom (prénom + nom)
+            const nomA = ((a.Nom || a.nom || '') + ' ' + (a.Prenom || a.prenom || '')).toLowerCase().trim();
+            const nomB = ((b.Nom || b.nom || '') + ' ' + (b.Prenom || b.prenom || '')).toLowerCase().trim();
+            
+            if (currentSort === 'name-asc') {
+                return nomA.localeCompare(nomB, 'fr');
+            } else {
+                return nomB.localeCompare(nomA, 'fr');
+            }
+        }
+        
+        // Par défaut, tri par date croissante
         const dateA = parseDateDDMMYYYY(a.Date_Recuperation || a.date_recuperation || '');
         const dateB = parseDateDDMMYYYY(b.Date_Recuperation || b.date_recuperation || '');
-        
-        if (currentSort === 'asc') {
-            return dateA - dateB;
-        } else {
-            return dateB - dateA;
-        }
+        return dateA - dateB;
     });
     
     console.log(`📊 Filtres appliqués: ${filteredOrders.length}/${allOrders.length} commandes`);
@@ -1193,17 +1211,40 @@ async function showCompositionPreview(compositionId) {
             }
         }
         
-        // Calculer le total de fruits
-        const totalFruits = Object.values(compositionData).reduce((sum, qty) => sum + parseInt(qty || 0), 0);
+        // Calculer le total de fruits (gérer les deux formats)
+        const totalFruits = Object.values(compositionData).reduce((sum, data) => {
+            if (typeof data === 'object' && data !== null) {
+                return sum + parseFloat(data.qty || 0);
+            } else {
+                return sum + parseFloat(data || 0);
+            }
+        }, 0);
         
         // Générer le HTML de la prévisualisation
         const fruitsList = Object.entries(compositionData)
-            .map(([nom, qty]) => `
-                <div class="composition-preview-fruit">
-                    <span class="composition-preview-fruit-name">${nom || 'Fruit'}</span>
-                    <span class="composition-preview-fruit-qty">×${qty || 0}</span>
-                </div>
-            `)
+            .map(([nom, data]) => {
+                // Gérer la compatibilité avec l'ancien format
+                let qty, unite;
+                if (typeof data === 'object' && data !== null) {
+                    // Nouveau format : {qty: 5, unite: 'piece'}
+                    qty = data.qty || 0;
+                    unite = data.unite || 'piece';
+                } else {
+                    // Ancien format : juste un nombre (par défaut 'piece')
+                    qty = data || 0;
+                    unite = 'piece';
+                }
+                
+                const uniteLabel = unite === 'kg' ? 'kg' : 'pièce(s)';
+                const qtyDisplay = unite === 'kg' ? qty.toFixed(1) : Math.round(qty);
+                
+                return `
+                    <div class="composition-preview-fruit">
+                        <span class="composition-preview-fruit-name">${nom || 'Fruit'}</span>
+                        <span class="composition-preview-fruit-qty">×${qtyDisplay} ${uniteLabel}</span>
+                    </div>
+                `;
+            })
             .join('');
         
         // Formater les dates

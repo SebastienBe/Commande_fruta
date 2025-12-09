@@ -146,6 +146,16 @@ function setupEventListeners() {
         recalculateStats(true); // true = recalcul automatique (sans confirmation)
     });
     
+    // Navigation mois précédent
+    document.getElementById('btnPrevMonth').addEventListener('click', () => {
+        navigateMonth(-1);
+    });
+    
+    // Navigation mois suivant
+    document.getElementById('btnNextMonth').addEventListener('click', () => {
+        navigateMonth(1);
+    });
+    
     // Bouton recalculer (manuel - avec confirmation)
     document.getElementById('btnRecalculate').addEventListener('click', () => {
         if (typeof Haptic !== 'undefined') Haptic.medium();
@@ -160,6 +170,57 @@ function setupEventListeners() {
     
     // Tri tableau (sera configuré dynamiquement dans renderTable via setupTableSortListeners)
     // Les listeners sont ajoutés automatiquement quand le tableau est rendu
+}
+
+/**
+ * Navigue vers le mois précédent ou suivant
+ * @param {Number} direction - -1 pour précédent, 1 pour suivant
+ */
+function navigateMonth(direction) {
+    if (typeof Haptic !== 'undefined') Haptic.light();
+    
+    // Si aucun mois n'est sélectionné, commencer par le mois actuel
+    if (currentMonth === null) {
+        currentMonth = new Date().getMonth() + 1;
+    }
+    
+    // Calculer le nouveau mois
+    let newMonth = currentMonth + direction;
+    let newYear = currentYear;
+    
+    // Gérer les changements d'année
+    if (newMonth < 1) {
+        newMonth = 12;
+        newYear -= 1;
+    } else if (newMonth > 12) {
+        newMonth = 1;
+        newYear += 1;
+    }
+    
+    // Vérifier que la nouvelle année est dans la plage disponible
+    const yearSelect = document.getElementById('filterYear');
+    const availableYears = Array.from(yearSelect.options).map(opt => parseInt(opt.value));
+    
+    if (!availableYears.includes(newYear)) {
+        // Si l'année n'est pas disponible, ne pas naviguer
+        console.warn(`⚠️ Année ${newYear} hors de la plage disponible`);
+        if (typeof Haptic !== 'undefined') Haptic.error();
+        return;
+    }
+    
+    // Mettre à jour les variables globales
+    currentYear = newYear;
+    currentMonth = newMonth;
+    
+    // Mettre à jour les selects
+    yearSelect.value = newYear;
+    const monthSelect = document.getElementById('filterMonth');
+    monthSelect.value = newMonth;
+    
+    console.log(`📅 Navigation: ${direction > 0 ? 'suivant' : 'précédent'} -> ${newYear}-${String(newMonth).padStart(2, '0')}`);
+    
+    // Recharger les stats
+    recalculateStats(true); // true = recalcul automatique (sans confirmation)
 }
 
 /**
@@ -361,8 +422,14 @@ async function loadStats(year = currentYear, month = currentMonth) {
                 }
             }
             
-            // Calculer total_fruits
-            const totalFruits = Object.values(fruitsSortis).reduce((sum, qty) => sum + (parseInt(qty) || 0), 0);
+            // Calculer total_fruits (gérer les deux formats : nombre ou objet {qty, unite})
+            const totalFruits = Object.values(fruitsSortis).reduce((sum, data) => {
+                if (typeof data === 'object' && data !== null) {
+                    return sum + (parseFloat(data.qty) || 0);
+                } else {
+                    return sum + (parseFloat(data) || 0);
+                }
+            }, 0);
             
             // Utiliser paniers_total depuis la DataTable
             const nombreCommandes = parseInt(stat.paniers_total) || parseInt(stat.nombre_commandes) || 0;
@@ -560,10 +627,17 @@ async function aggregateStats() {
     
     currentStats.forEach(stat => {
         const fruits = stat.fruits_sortis || {};
-        Object.entries(fruits).forEach(([fruit, qty]) => {
+        Object.entries(fruits).forEach(([fruit, data]) => {
             const fruitKey = fruit.toLowerCase();
-            repartitionFruits[fruitKey] = (repartitionFruits[fruitKey] || 0) + (qty || 0);
-            totalFruits += qty || 0;
+            // Gérer les deux formats : nombre ou objet {qty, unite}
+            let qty;
+            if (typeof data === 'object' && data !== null) {
+                qty = parseFloat(data.qty) || 0;
+            } else {
+                qty = parseFloat(data) || 0;
+            }
+            repartitionFruits[fruitKey] = (repartitionFruits[fruitKey] || 0) + qty;
+            totalFruits += qty;
         });
     });
     
@@ -695,8 +769,13 @@ function updateBarChart(data) {
         return {
             label: fruitName,
             data: fruitsParMois.map(month => {
-                const value = month.fruits[fruit] || month.fruits[fruitKey] || 0;
-                return value;
+                const data = month.fruits[fruit] || month.fruits[fruitKey];
+                // Gérer les deux formats : nombre ou objet {qty, unite}
+                if (typeof data === 'object' && data !== null) {
+                    return parseFloat(data.qty) || 0;
+                } else {
+                    return parseFloat(data) || 0;
+                }
             }),
             backgroundColor: FRUIT_COLORS[fruitKey] || FRUIT_COLORS[fruit] || '#CCCCCC',
             borderColor: FRUIT_COLORS[fruitKey] || FRUIT_COLORS[fruit] || '#CCCCCC',
@@ -815,8 +894,21 @@ function renderTable() {
                     const fruitsA = a.fruits_sortis || {};
                     const fruitsB = b.fruits_sortis || {};
                     const fruitKey = sortColumn.toLowerCase();
-                    aVal = fruitsA[sortColumn] || fruitsA[fruitKey] || 0;
-                    bVal = fruitsB[sortColumn] || fruitsB[fruitKey] || 0;
+                    const dataA = fruitsA[sortColumn] || fruitsA[fruitKey];
+                    const dataB = fruitsB[sortColumn] || fruitsB[fruitKey];
+                    
+                    // Gérer les deux formats
+                    if (typeof dataA === 'object' && dataA !== null) {
+                        aVal = parseFloat(dataA.qty) || 0;
+                    } else {
+                        aVal = parseFloat(dataA) || 0;
+                    }
+                    
+                    if (typeof dataB === 'object' && dataB !== null) {
+                        bVal = parseFloat(dataB.qty) || 0;
+                    } else {
+                        bVal = parseFloat(dataB) || 0;
+                    }
             }
             
             if (sortDirection === 'asc') {
@@ -828,7 +920,9 @@ function renderTable() {
     }
     
     // Rendre les cards (vue liste principale)
-    renderMobileCards(cardsContainer, sortedStats);
+    if (cardsContainer) {
+        renderMobileCards(cardsContainer);
+    }
 }
 
 /**
@@ -1088,7 +1182,14 @@ function exportCSV() {
     currentStats.forEach(stat => {
         const fruitValues = fruitsArray.map(fruit => {
             const fruits = stat.fruits_sortis || {};
-            return fruits[fruit] || 0;
+            const data = fruits[fruit];
+            
+            // Gérer les deux formats : nombre ou objet {qty, unite}
+            if (typeof data === 'object' && data !== null) {
+                return parseFloat(data.qty) || 0;
+            } else {
+                return parseFloat(data) || 0;
+            }
         });
         
         csv += `${stat.annee},${stat.mois},"${getMonthName(stat.mois)}",${stat.nombre_commandes || 0},${stat.total_fruits || 0},${fruitValues.join(',')}\n`;
@@ -1148,21 +1249,85 @@ function hideLoading() {
 }
 
 /**
+ * Crée un mapping fruit -> unité depuis les compositions actives
+ * @returns {Promise<Object>} Mapping {fruit: unite}
+ */
+async function createFruitUnitMapping() {
+    const fruitUnitMap = {};
+    
+    try {
+        // Récupérer les compositions si la fonction est disponible
+        if (typeof getCompositions === 'function') {
+            const compositions = await getCompositions();
+            
+            // Parcourir toutes les compositions (actives et inactives)
+            // Prendre la dernière unité trouvée pour chaque fruit
+            compositions.forEach(comp => {
+                let compositionData = comp.composition_json || comp.composition || {};
+                
+                // Parser si c'est une string
+                if (typeof compositionData === 'string') {
+                    try {
+                        compositionData = JSON.parse(compositionData);
+                    } catch (e) {
+                        console.warn('⚠️ Erreur parsing composition_json:', e);
+                        return;
+                    }
+                }
+                
+                // Extraire les unités
+                Object.entries(compositionData).forEach(([fruit, data]) => {
+                    const fruitKey = fruit.toLowerCase().trim();
+                    
+                    // Gérer les deux formats
+                    if (typeof data === 'object' && data !== null && data.unite) {
+                        // Nouveau format : stocker l'unité
+                        fruitUnitMap[fruitKey] = data.unite;
+                    } else if (typeof data === 'object' && data !== null) {
+                        // Format avec qty mais sans unite explicite -> par défaut 'piece'
+                        if (!fruitUnitMap[fruitKey]) {
+                            fruitUnitMap[fruitKey] = 'piece';
+                        }
+                    }
+                    // Si c'est un nombre simple, on garde 'piece' par défaut (déjà dans le code)
+                });
+            });
+            
+            console.log('📊 Mapping fruit -> unité créé:', fruitUnitMap);
+        }
+    } catch (error) {
+        console.warn('⚠️ Erreur lors de la création du mapping fruit -> unité:', error);
+    }
+    
+    return fruitUnitMap;
+}
+
+/**
  * Rend les cards pour mobile
  * @param {HTMLElement} container - Container pour les cards
  */
-function renderMobileCards(container) {
+async function renderMobileCards(container) {
     if (!container || currentStats.length === 0) {
         if (container) container.innerHTML = '';
         return;
     }
+    
+    // Créer le mapping fruit -> unité depuis les compositions
+    const fruitUnitMap = await createFruitUnitMapping();
     
     // Extraire tous les fruits uniques
     const allFruitsSet = new Set();
     currentStats.forEach(stat => {
         const fruits = stat.fruits_sortis || {};
         Object.keys(fruits).forEach(fruit => {
-            if (fruits[fruit] > 0) {
+            const data = fruits[fruit];
+            let qty;
+            if (typeof data === 'object' && data !== null) {
+                qty = parseFloat(data.qty) || 0;
+            } else {
+                qty = parseFloat(data) || 0;
+            }
+            if (qty > 0) {
                 allFruitsSet.add(fruit.toLowerCase());
             }
         });
@@ -1175,7 +1340,12 @@ function renderMobileCards(container) {
     allFruits.forEach(fruit => {
         fruitTotals[fruit] = currentStats.reduce((sum, stat) => {
             const fruits = stat.fruits_sortis || {};
-            return sum + (fruits[fruit] || 0);
+            const data = fruits[fruit];
+            if (typeof data === 'object' && data !== null) {
+                return sum + (parseFloat(data.qty) || 0);
+            } else {
+                return sum + (parseFloat(data) || 0);
+            }
         }, 0);
     });
     
@@ -1209,8 +1379,21 @@ function renderMobileCards(container) {
                 const fruitsA = a.fruits_sortis || {};
                 const fruitsB = b.fruits_sortis || {};
                 const fruitKey = sortColumn.toLowerCase();
-                aVal = fruitsA[sortColumn] || fruitsA[fruitKey] || 0;
-                bVal = fruitsB[sortColumn] || fruitsB[fruitKey] || 0;
+                const dataA = fruitsA[sortColumn] || fruitsA[fruitKey];
+                const dataB = fruitsB[sortColumn] || fruitsB[fruitKey];
+                
+                // Gérer les deux formats
+                if (typeof dataA === 'object' && dataA !== null) {
+                    aVal = parseFloat(dataA.qty) || 0;
+                } else {
+                    aVal = parseFloat(dataA) || 0;
+                }
+                
+                if (typeof dataB === 'object' && dataB !== null) {
+                    bVal = parseFloat(dataB.qty) || 0;
+                } else {
+                    bVal = parseFloat(dataB) || 0;
+                }
             }
             
             if (typeof aVal === 'string') {
@@ -1231,13 +1414,36 @@ function renderMobileCards(container) {
         
         // Afficher TOUS les fruits avec quantité > 0 (pas de limite)
         const allFruitsWithQty = sortedFruits
-            .filter(fruit => (fruits[fruit] || 0) > 0)
+            .filter(fruit => {
+                const data = fruits[fruit];
+                if (typeof data === 'object' && data !== null) {
+                    return (parseFloat(data.qty) || 0) > 0;
+                } else {
+                    return (parseFloat(data) || 0) > 0;
+                }
+            })
             .map(fruit => {
-                const qty = fruits[fruit] || 0;
+                const data = fruits[fruit];
+                let qty, unite;
+                
+                // Gérer les deux formats
+                if (typeof data === 'object' && data !== null) {
+                    qty = parseFloat(data.qty) || 0;
+                    unite = data.unite || 'piece';
+                } else {
+                    qty = parseFloat(data) || 0;
+                    // Utiliser le mapping depuis les compositions si disponible
+                    const fruitKey = fruit.toLowerCase().trim();
+                    unite = fruitUnitMap[fruitKey] || 'piece';
+                }
+                
                 const fruitName = fruit.charAt(0).toUpperCase() + fruit.slice(1);
+                const qtyDisplay = unite === 'kg' ? qty.toFixed(1) : Math.round(qty);
+                const uniteLabel = unite === 'kg' ? 'kg' : 'pièce(s)';
+                
                 return `<div class="mobile-card-fruit">
                     <span class="mobile-card-fruit-name">${fruitName}</span>
-                    <span class="mobile-card-fruit-qty">${qty.toLocaleString('fr-FR')}</span>
+                    <span class="mobile-card-fruit-qty">${qtyDisplay.toLocaleString('fr-FR')} ${uniteLabel}</span>
                 </div>`;
             }).join('');
         

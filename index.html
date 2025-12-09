@@ -181,17 +181,17 @@
             <div class="filters-chips" role="group" aria-label="Filtres rapides par état">
                 <button 
                     type="button" 
-                    class="chip chip-active" 
+                    class="chip" 
                     data-filter="all"
-                    aria-pressed="true"
+                    aria-pressed="false"
                 >
                     Toutes <span class="chip-count" id="chipCountAll">0</span>
                 </button>
                 <button 
                     type="button" 
-                    class="chip" 
+                    class="chip chip-active" 
                     data-filter="En préparation"
-                    aria-pressed="false"
+                    aria-pressed="true"
                 >
                     🔧 En préparation <span class="chip-count" id="chipCountPending">0</span>
                 </button>
@@ -215,16 +215,63 @@
             
             <!-- Actions rapides -->
             <div class="actions-bar">
-                <button 
-                    type="button" 
-                    id="btnSort" 
-                    class="btn btn-secondary"
-                    aria-label="Trier les commandes"
-                    title="Trier par date de récupération"
-                >
-                    <span aria-hidden="true">📅</span>
-                    <span>Trier</span>
-                </button>
+                <div class="sort-dropdown-wrapper">
+                    <button 
+                        type="button" 
+                        id="btnSort" 
+                        class="btn btn-secondary sort-btn"
+                        aria-label="Trier les commandes"
+                        aria-haspopup="true"
+                        aria-expanded="false"
+                        title="Trier les commandes"
+                    >
+                        <span aria-hidden="true" id="sortIcon">📅↑</span>
+                        <span id="sortText">Trier</span>
+                        <span aria-hidden="true" class="sort-arrow">▼</span>
+                    </button>
+                    <div id="sortMenu" class="sort-menu hidden" role="menu" aria-labelledby="btnSort">
+                        <button 
+                            type="button" 
+                            class="sort-menu-item" 
+                            data-sort="date-asc"
+                            role="menuitem"
+                        >
+                            <span class="sort-menu-icon">📅↑</span>
+                            <span class="sort-menu-text">Date croissante</span>
+                            <span class="sort-menu-check" aria-hidden="true">✓</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            class="sort-menu-item" 
+                            data-sort="date-desc"
+                            role="menuitem"
+                        >
+                            <span class="sort-menu-icon">📅↓</span>
+                            <span class="sort-menu-text">Date décroissante</span>
+                            <span class="sort-menu-check" aria-hidden="true">✓</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            class="sort-menu-item" 
+                            data-sort="name-asc"
+                            role="menuitem"
+                        >
+                            <span class="sort-menu-icon">👤 A-Z</span>
+                            <span class="sort-menu-text">Nom (A-Z)</span>
+                            <span class="sort-menu-check" aria-hidden="true">✓</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            class="sort-menu-item" 
+                            data-sort="name-desc"
+                            role="menuitem"
+                        >
+                            <span class="sort-menu-icon">👤 Z-A</span>
+                            <span class="sort-menu-text">Nom (Z-A)</span>
+                            <span class="sort-menu-check" aria-hidden="true">✓</span>
+                        </button>
+                    </div>
+                </div>
                 <button 
                     type="button" 
                     id="btnRefresh" 

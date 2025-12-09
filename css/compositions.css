@@ -385,8 +385,9 @@
 
 .comp-fruit-input-group {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 2fr 1fr 1.2fr;
     gap: var(--spacing-sm);
+    flex: 1;
 }
 
 .btn-remove-fruit {
@@ -431,6 +432,15 @@
 
 /* ===== RESPONSIVE MOBILE ===== */
 @media (max-width: 479px) {
+    .comp-fruit-input-group {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-xs);
+    }
+    
+    .comp-fruit-row {
+        grid-template-columns: 1fr auto;
+    }
+    
     .comp-filters {
         padding: var(--spacing-sm);
     }

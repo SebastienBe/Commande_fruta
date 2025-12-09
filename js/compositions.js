@@ -641,16 +641,39 @@ function renderCompositionCard(comp) {
     // Préparer la liste des fruits (avec protection undefined)
     const composition = comp.composition_json || comp.composition || {};
     const fruits = Object.entries(composition)
-        .map(([nom, qty]) => `
-            <li class="comp-fruit-item">
-                <span class="comp-fruit-name">${nom || 'Fruit'}</span>
-                <span class="comp-fruit-qty">×${qty || 0}</span>
-            </li>
-        `)
+        .map(([nom, data]) => {
+            // Gérer la compatibilité avec l'ancien format (data peut être un nombre ou un objet)
+            let qty, unite;
+            if (typeof data === 'object' && data !== null) {
+                // Nouveau format : {qty: 5, unite: 'piece'}
+                qty = parseFloat(data.qty) || 0;
+                unite = data.unite || 'piece';
+            } else {
+                // Ancien format : juste un nombre (par défaut 'piece')
+                qty = parseFloat(data) || 0;
+                unite = 'piece';
+            }
+            
+            const qtyDisplay = unite === 'kg' ? qty.toFixed(1) : Math.round(qty);
+            const uniteLabel = unite === 'kg' ? 'kg' : 'pièce(s)';
+            
+            return `
+                <li class="comp-fruit-item">
+                    <span class="comp-fruit-name">${nom || 'Fruit'}</span>
+                    <span class="comp-fruit-qty">×${qtyDisplay} ${uniteLabel}</span>
+                </li>
+            `;
+        })
         .join('');
     
-    // Total de fruits
-    const totalFruits = Object.values(composition).reduce((sum, qty) => sum + parseInt(qty || 0), 0);
+    // Total de fruits (gérer les deux formats)
+    const totalFruits = Object.values(composition).reduce((sum, data) => {
+        if (typeof data === 'object' && data !== null) {
+            return sum + (parseFloat(data.qty) || 0);
+        } else {
+            return sum + (parseFloat(data) || 0);
+        }
+    }, 0);
     
     // Formater les dates (avec valeurs par défaut)
     const dateRange = formatDateRange(
@@ -776,8 +799,15 @@ function openCompModal(comp = null) {
         
         // Ajouter les fruits
         const composition = comp.composition_json || comp.composition || {};
-        Object.entries(composition).forEach(([nom, qty]) => {
-            addFruitRow(nom, qty);
+        Object.entries(composition).forEach(([nom, data]) => {
+            // Gérer la compatibilité avec l'ancien format (data peut être un nombre ou un objet)
+            if (typeof data === 'object' && data !== null) {
+                // Nouveau format : {qty: 5, unite: 'piece'}
+                addFruitRow(nom, data.qty || '', data.unite || 'piece');
+            } else {
+                // Ancien format : juste un nombre (par défaut 'piece')
+                addFruitRow(nom, data || '', 'piece');
+            }
         });
         
     } else {
@@ -824,11 +854,26 @@ function closeCompModal() {
 /**
  * Ajoute une ligne de fruit dans le formulaire
  * @param {String} nom - Nom du fruit (optionnel)
- * @param {Number} qty - Quantité (optionnel)
+ * @param {Number|Object} qty - Quantité (optionnel) ou objet {qty, unite}
+ * @param {String} unite - Unité de mesure (optionnel, par défaut 'piece')
  */
-function addFruitRow(nom = '', qty = '') {
+function addFruitRow(nom = '', qty = '', unite = 'piece') {
     const container = document.getElementById('fruitsContainer');
     const index = container.children.length;
+    
+    // Gérer la compatibilité avec l'ancien format (qty peut être un nombre ou un objet)
+    let qtyValue = '';
+    let uniteValue = unite;
+    
+    if (typeof qty === 'object' && qty !== null) {
+        // Nouveau format : {qty: 5, unite: 'piece'}
+        qtyValue = qty.qty || '';
+        uniteValue = qty.unite || 'piece';
+    } else if (qty !== '' && qty !== null) {
+        // Ancien format : juste un nombre
+        qtyValue = qty;
+        uniteValue = unite || 'piece';
+    }
     
     const row = document.createElement('div');
     row.className = 'comp-fruit-row';
@@ -836,7 +881,7 @@ function addFruitRow(nom = '', qty = '') {
     
     row.innerHTML = `
         <div class="comp-fruit-input-group">
-            <div class="form-group" style="margin: 0;">
+            <div class="form-group" style="margin: 0; flex: 1;">
                 <input 
                     type="text" 
                     class="form-input fruit-name" 
@@ -846,17 +891,27 @@ function addFruitRow(nom = '', qty = '') {
                     required
                 >
             </div>
-            <div class="form-group" style="margin: 0;">
+            <div class="form-group" style="margin: 0; flex: 0 0 100px;">
                 <input 
                     type="number" 
                     class="form-input fruit-qty" 
                     placeholder="Qté"
-                    value="${qty}"
-                    min="1"
-                    max="100"
+                    value="${qtyValue}"
+                    min="0.1"
+                    step="0.1"
                     data-index="${index}"
                     required
                 >
+            </div>
+            <div class="form-group" style="margin: 0; flex: 0 0 120px;">
+                <select 
+                    class="form-select fruit-unite" 
+                    data-index="${index}"
+                    aria-label="Unité de mesure"
+                >
+                    <option value="piece" ${uniteValue === 'piece' ? 'selected' : ''}>Pièce</option>
+                    <option value="kg" ${uniteValue === 'kg' ? 'selected' : ''}>Kilogramme</option>
+                </select>
             </div>
         </div>
         <button 
@@ -982,13 +1037,19 @@ function getCompFormData() {
     fruitRows.forEach(row => {
         const nameInput = row.querySelector('.fruit-name');
         const qtyInput = row.querySelector('.fruit-qty');
+        const uniteSelect = row.querySelector('.fruit-unite');
         
-        if (nameInput && qtyInput) {
+        if (nameInput && qtyInput && uniteSelect) {
             const fruitName = nameInput.value.trim();
-            const fruitQty = parseInt(qtyInput.value);
+            const fruitQty = parseFloat(qtyInput.value);
+            const fruitUnite = uniteSelect.value || 'piece';
             
             if (fruitName && fruitQty > 0) {
-                composition[fruitName] = fruitQty;
+                // Nouveau format : stocker qty et unite
+                composition[fruitName] = {
+                    qty: fruitQty,
+                    unite: fruitUnite
+                };
             }
         }
     });
@@ -1050,10 +1111,19 @@ function validateCompForm(data) {
         errors.push({ field: 'errorFruits', message: 'Au moins 1 fruit est requis' });
     }
     
-    for (const [fruit, qty] of Object.entries(data.composition_json)) {
+    for (const [fruit, data] of Object.entries(data.composition_json)) {
         if (!fruit || fruit.length < 2) {
             errors.push({ field: 'errorFruits', message: `Nom de fruit invalide: "${fruit}"` });
         }
+        
+        // Gérer les deux formats : nombre ou objet {qty, unite}
+        let qty;
+        if (typeof data === 'object' && data !== null) {
+            qty = parseFloat(data.qty);
+        } else {
+            qty = parseFloat(data);
+        }
+        
         if (!qty || qty <= 0) {
             errors.push({ field: 'errorFruits', message: `Quantité invalide pour ${fruit}` });
         }
