@@ -6,7 +6,7 @@
  * Configuration de l'API n8n
  * Backend : https://n8n-seb.sandbox-jerem.com
  */
-const API_BASE_URL = 'https://n8n-seb.sandbox-jerem.com/webhook-test/orders';
+const API_BASE_URL = 'https://n8n-seb.sandbox-jerem.com/webhook/orders';
 
 const API_ENDPOINTS = {
     GET_ORDERS: API_BASE_URL,                    // GET - Récupérer toutes les commandes
