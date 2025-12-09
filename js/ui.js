@@ -387,11 +387,11 @@ function openModalCreate() {
         inputDate.value = today;
     }
     
-    // Charger les compositions
-    loadCompositionsInSelect();
-    
-    // Initialiser la prévisualisation de composition
-    setupCompositionPreview();
+    // Charger les compositions et initialiser la prévisualisation après
+    loadCompositionsInSelect().then(() => {
+        // Initialiser la prévisualisation de composition après chargement
+        setupCompositionPreview();
+    });
     
     // Afficher le modal
     modal.classList.remove('hidden');
@@ -680,11 +680,16 @@ async function handleFormSubmit(event) {
     const form = event.target;
     
     // 🔍 DEBUG : Vérifier le select composition
-    const selectComposition = document.getElementById('inputComposition');
+    // Utiliser querySelector pour s'assurer d'avoir le bon élément même après clonage
+    const selectComposition = document.querySelector('#inputComposition');
     console.log('🔍 Select composition element:', selectComposition);
     console.log('🔍 Select composition value:', selectComposition?.value);
     console.log('🔍 Select composition selectedIndex:', selectComposition?.selectedIndex);
     console.log('🔍 Select composition selectedOption:', selectComposition?.options[selectComposition?.selectedIndex]);
+    
+    // Récupérer la valeur de composition_id (peut être vide string, null, ou une valeur)
+    const compositionIdValue = selectComposition?.value;
+    const compositionId = (compositionIdValue && compositionIdValue.trim() !== '') ? compositionIdValue.trim() : null;
     
     // Récupérer les données du formulaire
     const formData = {
@@ -694,7 +699,7 @@ async function handleFormSubmit(event) {
         telephone: document.getElementById('inputTelephone').value,
         nombrePaniers: document.getElementById('inputNombrePaniers').value,
         dateRecuperation: document.getElementById('inputDateRecuperation').value,
-        composition_id: selectComposition?.value || null,
+        composition_id: compositionId,
         etat: isEditMode ? document.getElementById('inputEtat').value : ORDER_STATES.PENDING
     };
     
@@ -1304,8 +1309,12 @@ function setupCompositionPreview() {
         return;
     }
     
+    // Supprimer les anciens listeners pour éviter les doublons
+    const newSelect = selectComposition.cloneNode(true);
+    selectComposition.parentNode.replaceChild(newSelect, selectComposition);
+    
     // Écouter les changements de sélection
-    selectComposition.addEventListener('change', (e) => {
+    newSelect.addEventListener('change', (e) => {
         const selectedId = e.target.value;
         showCompositionPreview(selectedId);
     });

@@ -1111,17 +1111,17 @@ function validateCompForm(data) {
         errors.push({ field: 'errorFruits', message: 'Au moins 1 fruit est requis' });
     }
     
-    for (const [fruit, data] of Object.entries(data.composition_json)) {
+    for (const [fruit, fruitData] of Object.entries(data.composition_json)) {
         if (!fruit || fruit.length < 2) {
             errors.push({ field: 'errorFruits', message: `Nom de fruit invalide: "${fruit}"` });
         }
         
         // Gérer les deux formats : nombre ou objet {qty, unite}
         let qty;
-        if (typeof data === 'object' && data !== null) {
-            qty = parseFloat(data.qty);
+        if (typeof fruitData === 'object' && fruitData !== null) {
+            qty = parseFloat(fruitData.qty);
         } else {
-            qty = parseFloat(data);
+            qty = parseFloat(fruitData);
         }
         
         if (!qty || qty <= 0) {
