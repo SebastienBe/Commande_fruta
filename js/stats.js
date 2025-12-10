@@ -10,7 +10,7 @@ const STATS_API_ENDPOINTS = {
     UPDATE: `${STATS_API_BASE}/stats/update`
 };
 
-// Couleurs pour les fruits (cohérentes sur tous les graphiques)
+// Couleurs pour les fruits (cohérentes sur tous les graphiques) - Utilisé comme fallback
 const FRUIT_COLORS = {
     'ananas': '#FFD700',
     'kiwis': '#90EE90',
@@ -52,14 +52,112 @@ const FRUIT_COLORS = {
     'nashi': '#FFE4B5'
 };
 
+/**
+ * Génère une palette de couleurs harmonieuses
+ * @param {Number} count - Nombre de couleurs à générer
+ * @returns {Array<String>} - Tableau de couleurs hexadécimales
+ */
+function generateColorPalette(count) {
+    if (count === 0) return [];
+    if (count === 1) return ['#4CAF50'];
+    
+    const colors = [];
+    
+    // Palette de couleurs vives et distinctes
+    const baseColors = [
+        '#FF6B6B', // Rouge
+        '#4ECDC4', // Turquoise
+        '#45B7D1', // Bleu
+        '#FFA07A', // Saumon
+        '#98D8C8', // Vert menthe
+        '#F7DC6F', // Jaune
+        '#BB8FCE', // Violet
+        '#85C1E2', // Bleu clair
+        '#F8B739', // Orange
+        '#52BE80', // Vert
+        '#EC7063', // Rose
+        '#5DADE2', // Bleu ciel
+        '#F4D03F', // Jaune doré
+        '#AF7AC5', // Mauve
+        '#48C9B0', // Vert émeraude
+        '#F1948A', // Rose saumon
+        '#7FB3D3', // Bleu acier
+        '#F9E79F', // Jaune pâle
+        '#A569BD', // Violet foncé
+        '#76D7C4'  // Turquoise clair
+    ];
+    
+    // Si on a moins de couleurs que demandé, utiliser les couleurs de base
+    if (count <= baseColors.length) {
+        return baseColors.slice(0, count);
+    }
+    
+    // Si on a besoin de plus de couleurs, générer des variations
+    const palette = [...baseColors];
+    
+    for (let i = baseColors.length; i < count; i++) {
+        // Générer des couleurs supplémentaires en variant la saturation et la luminosité
+        const hue = (i * 137.508) % 360; // Angle d'or pour répartition uniforme
+        const saturation = 60 + (i % 3) * 15; // Entre 60% et 90%
+        const lightness = 50 + (i % 4) * 10; // Entre 50% et 80%
+        
+        // Convertir HSL en RGB puis en hex
+        const hslToRgb = (h, s, l) => {
+            s /= 100;
+            l /= 100;
+            const c = (1 - Math.abs(2 * l - 1)) * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = l - c / 2;
+            let r = 0, g = 0, b = 0;
+            
+            if (0 <= h && h < 60) {
+                r = c; g = x; b = 0;
+            } else if (60 <= h && h < 120) {
+                r = x; g = c; b = 0;
+            } else if (120 <= h && h < 180) {
+                r = 0; g = c; b = x;
+            } else if (180 <= h && h < 240) {
+                r = 0; g = x; b = c;
+            } else if (240 <= h && h < 300) {
+                r = x; g = 0; b = c;
+            } else if (300 <= h && h < 360) {
+                r = c; g = 0; b = x;
+            }
+            
+            r = Math.round((r + m) * 255);
+            g = Math.round((g + m) * 255);
+            b = Math.round((b + m) * 255);
+            
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        };
+        
+        palette.push(hslToRgb(hue, saturation, lightness));
+    }
+    
+    return palette;
+}
+
+/**
+ * Obtient une couleur unique pour un produit selon sa position dans la liste
+ * @param {Number} index - Index du produit dans la liste triée (0 = premier)
+ * @param {Number} totalCount - Nombre total de produits
+ * @returns {String} - Couleur hexadécimale
+ */
+function getColorByProductIndex(index, totalCount) {
+    const palette = generateColorPalette(totalCount);
+    return palette[index] || '#CCCCCC';
+}
+
 // ===== STATE =====
 let currentStats = [];
 let currentYear = new Date().getFullYear();
 let currentMonth = null; // null = toute l'année
 let barChart = null;
 let pieChart = null;
+let compositionsChart = null; // Graphique des compositions par mois
 let sortColumn = null;
 let sortDirection = 'asc';
+let currentTab = 'dataviz'; // Onglet actif
 
 // ===== INITIALISATION =====
 document.addEventListener('DOMContentLoaded', initStats);
@@ -93,6 +191,9 @@ function initStats() {
     
     // Initialiser les event listeners
     setupEventListeners();
+    
+    // Initialiser les onglets
+    setupTabs();
     
     // Recalculer et charger les statistiques au chargement
     recalculateStats(true); // true = recalcul automatique (sans confirmation)
@@ -136,6 +237,10 @@ function setupEventListeners() {
         if (typeof Haptic !== 'undefined') Haptic.light();
         // Recalculer puis recharger les stats
         recalculateStats(true); // true = recalcul automatique (sans confirmation)
+        // Mettre à jour le graphique des compositions si l'onglet est actif
+        if (currentTab === 'compositions') {
+            updateCompositionsChart();
+        }
     });
     
     // Filtre mois
@@ -144,6 +249,10 @@ function setupEventListeners() {
         if (typeof Haptic !== 'undefined') Haptic.light();
         // Recalculer puis recharger les stats
         recalculateStats(true); // true = recalcul automatique (sans confirmation)
+        // Mettre à jour le graphique des compositions si l'onglet est actif
+        if (currentTab === 'compositions') {
+            updateCompositionsChart();
+        }
     });
     
     // Navigation mois précédent
@@ -170,6 +279,52 @@ function setupEventListeners() {
     
     // Tri tableau (sera configuré dynamiquement dans renderTable via setupTableSortListeners)
     // Les listeners sont ajoutés automatiquement quand le tableau est rendu
+}
+
+/**
+ * Configure les onglets du dashboard
+ */
+function setupTabs() {
+    const tabs = document.querySelectorAll('.stats-tab');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const tabName = e.currentTarget.getAttribute('data-tab');
+            switchTab(tabName);
+            if (typeof Haptic !== 'undefined') Haptic.light();
+        });
+    });
+}
+
+/**
+ * Change d'onglet
+ * @param {String} tabName - Nom de l'onglet (dataviz, details, compositions)
+ */
+function switchTab(tabName) {
+    // Mettre à jour l'état actif des onglets
+    const tabs = document.querySelectorAll('.stats-tab');
+    const panels = document.querySelectorAll('.stats-tab-panel');
+    
+    tabs.forEach(tab => {
+        const isActive = tab.getAttribute('data-tab') === tabName;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive);
+    });
+    
+    panels.forEach(panel => {
+        const isActive = panel.id === `panel${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`;
+        panel.classList.toggle('active', isActive);
+        panel.setAttribute('aria-hidden', !isActive);
+    });
+    
+    currentTab = tabName;
+    
+    // Si on passe à l'onglet compositions, initialiser le graphique
+    if (tabName === 'compositions') {
+        updateCompositionsChart();
+    }
+    
+    console.log(`📑 Onglet changé: ${tabName}`);
 }
 
 /**
@@ -691,6 +846,11 @@ async function updateUI() {
     updateBarChart(aggregated);
     updatePieChart(aggregated);
     
+    // Mettre à jour le graphique des compositions si l'onglet est actif
+    if (currentTab === 'compositions') {
+        updateCompositionsChart();
+    }
+    
     // Mettre à jour le tableau
     renderTable();
 }
@@ -752,7 +912,14 @@ function updateBarChart(data) {
     fruitsParMois.forEach(month => {
         Object.entries(month.fruits).forEach(([fruit, qty]) => {
             const fruitKey = fruit.toLowerCase();
-            fruitTotals[fruitKey] = (fruitTotals[fruitKey] || 0) + (qty || 0);
+            // Gérer les deux formats
+            let qtyValue;
+            if (typeof qty === 'object' && qty !== null) {
+                qtyValue = parseFloat(qty.qty) || 0;
+            } else {
+                qtyValue = parseFloat(qty) || 0;
+            }
+            fruitTotals[fruitKey] = (fruitTotals[fruitKey] || 0) + qtyValue;
         });
     });
     
@@ -762,10 +929,13 @@ function updateBarChart(data) {
     // Limiter à 8 fruits maximum pour la lisibilité
     const topFruits = sortedFruits.slice(0, 8);
     
-    // Créer les datasets (1 par fruit, limité aux top fruits)
-    const datasets = topFruits.map(fruit => {
+    // Créer les datasets (1 par fruit, limité aux top fruits) avec couleurs uniques par produit
+    const datasets = topFruits.map((fruit, index) => {
         const fruitKey = fruit.toLowerCase();
         const fruitName = fruit.charAt(0).toUpperCase() + fruit.slice(1);
+        // Chaque produit a une couleur unique basée sur sa position dans la liste
+        const color = getColorByProductIndex(index, topFruits.length);
+        
         return {
             label: fruitName,
             data: fruitsParMois.map(month => {
@@ -777,8 +947,8 @@ function updateBarChart(data) {
                     return parseFloat(data) || 0;
                 }
             }),
-            backgroundColor: FRUIT_COLORS[fruitKey] || FRUIT_COLORS[fruit] || '#CCCCCC',
-            borderColor: FRUIT_COLORS[fruitKey] || FRUIT_COLORS[fruit] || '#CCCCCC',
+            backgroundColor: color,
+            borderColor: color,
             borderWidth: 2,
             borderRadius: 4,
             barThickness: 'flex',
@@ -820,12 +990,12 @@ function updatePieChart(data) {
     // Trier par quantité décroissante
     const sortedFruits = fruits.sort((a, b) => repartition[b] - repartition[a]);
     
-    // Créer les données
+    // Créer les données avec couleurs uniques par produit (basées sur la position dans la liste)
     const labels = sortedFruits.map(fruit => fruit.charAt(0).toUpperCase() + fruit.slice(1));
     const values = sortedFruits.map(fruit => repartition[fruit]);
-    const colors = sortedFruits.map(fruit => {
-        const fruitKey = fruit.toLowerCase();
-        return FRUIT_COLORS[fruitKey] || FRUIT_COLORS[fruit] || '#CCCCCC';
+    const colors = sortedFruits.map((fruit, index) => {
+        // Chaque produit a une couleur unique basée sur sa position dans la liste
+        return getColorByProductIndex(index, sortedFruits.length);
     });
     
     pieChart.data.labels = labels;
@@ -839,6 +1009,218 @@ function updatePieChart(data) {
 }
 
 /**
+ * Met à jour le graphique des compositions par mois
+ */
+async function updateCompositionsChart() {
+    // Vérifier si le graphique existe, sinon l'initialiser
+    const compositionsCtx = document.getElementById('compositionsChart');
+    if (!compositionsCtx) {
+        console.warn('⚠️ Canvas compositionsChart introuvable');
+        return;
+    }
+    
+    // Si le graphique n'existe pas, l'initialiser
+    if (!compositionsChart) {
+        // Vérifier si un graphique existe déjà sur ce canvas et le détruire
+        const existingChart = Chart.getChart(compositionsCtx);
+        if (existingChart) {
+            existingChart.destroy();
+            compositionsChart = null;
+        }
+        
+        compositionsChart = new Chart(compositionsCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            padding: window.innerWidth < 480 ? 8 : 12,
+                            usePointStyle: true,
+                            font: {
+                                size: window.innerWidth < 480 ? 9 : window.innerWidth < 768 ? 10 : 12
+                            },
+                            boxWidth: window.innerWidth < 480 ? 10 : 12
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: (items) => {
+                                if (!items || items.length === 0) return '';
+                                return `📅 ${items[0].label}`;
+                            },
+                            label: (context) => {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y || 0;
+                                return `${label}: ${value.toLocaleString('fr-FR')} panier(s)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 11
+                            },
+                            maxRotation: window.innerWidth < 480 ? 45 : 0,
+                            minRotation: 0
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 11
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+        console.log('✅ Graphique compositions initialisé dans updateCompositionsChart');
+    }
+    
+    const emptyState = document.getElementById('compositionsEmptyState');
+    const chartContainer = document.getElementById('compositionsChartContainer');
+    
+    try {
+        // Charger les commandes filtrées
+        let allOrders = [];
+        if (typeof getOrders === 'function') {
+            allOrders = await getOrders();
+        } else {
+            const response = await fetch('https://n8n-seb.sandbox-jerem.com/webhook/orders');
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0 && data[0].data && Array.isArray(data[0].data)) {
+                    allOrders = data[0].data;
+                } else if (data.data && Array.isArray(data.data)) {
+                    allOrders = data.data;
+                } else if (Array.isArray(data)) {
+                    allOrders = data;
+                }
+            }
+        }
+        
+        // Filtrer les commandes selon l'année et le mois sélectionnés
+        const filteredOrders = allOrders.filter(order => {
+            const dateRecup = order.Date_Recuperation || order.date_recuperation || order.DateRecuperation || '';
+            if (!dateRecup) return false;
+            
+            const date = parseOrderDate(dateRecup);
+            if (!date || isNaN(date.getTime())) return false;
+            
+            const orderYear = date.getFullYear();
+            const orderMonth = date.getMonth() + 1;
+            
+            if (orderYear !== currentYear) return false;
+            if (currentMonth !== null && orderMonth !== currentMonth) return false;
+            
+            return true;
+        });
+        
+        if (filteredOrders.length === 0) {
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (chartContainer) chartContainer.style.display = 'none';
+            compositionsChart.data.labels = [];
+            compositionsChart.data.datasets = [];
+            compositionsChart.update('none');
+            return;
+        }
+        
+        if (emptyState) emptyState.classList.add('hidden');
+        if (chartContainer) chartContainer.style.display = 'block';
+        
+        // Grouper par mois et par composition_id
+        const dataByMonth = {};
+        
+        filteredOrders.forEach(order => {
+            const dateRecup = order.Date_Recuperation || order.date_recuperation || order.DateRecuperation || '';
+            const date = parseOrderDate(dateRecup);
+            if (!date) return;
+            
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const moisKey = `${year}-${String(month).padStart(2, '0')}`;
+            
+            const compositionId = order.composition_id || order.compositionId || 'Sans composition';
+            const nombrePaniers = parseInt(order.Nombre_Paniers || order.nombrePaniers || order.nombre_paniers || 1);
+            
+            if (!dataByMonth[moisKey]) {
+                dataByMonth[moisKey] = {};
+            }
+            
+            if (!dataByMonth[moisKey][compositionId]) {
+                dataByMonth[moisKey][compositionId] = 0;
+            }
+            
+            dataByMonth[moisKey][compositionId] += nombrePaniers;
+        });
+        
+        // Trier les mois
+        const sortedMonths = Object.keys(dataByMonth).sort();
+        
+        // Extraire toutes les compositions uniques
+        const allCompositions = new Set();
+        Object.values(dataByMonth).forEach(compositions => {
+            Object.keys(compositions).forEach(compId => allCompositions.add(compId));
+        });
+        
+        const compositionsList = Array.from(allCompositions).sort();
+        
+        // Créer les datasets (un par composition)
+        const datasets = compositionsList.map((compId, index) => {
+            const color = getColorByProductIndex(index, compositionsList.length);
+            
+            return {
+                label: compId,
+                data: sortedMonths.map(mois => dataByMonth[mois][compId] || 0),
+                backgroundColor: color,
+                borderColor: color,
+                borderWidth: 2,
+                borderRadius: 4
+            };
+        });
+        
+        // Créer les labels (noms des mois)
+        const labels = sortedMonths.map(mois => {
+            const [year, month] = mois.split('-');
+            return getMonthName(parseInt(month)) + ' ' + year;
+        });
+        
+        // Mettre à jour le graphique
+        compositionsChart.data.labels = labels;
+        compositionsChart.data.datasets = datasets;
+        compositionsChart.update('active');
+        
+        console.log('✅ Graphique compositions mis à jour:', { labels: labels.length, datasets: datasets.length });
+        
+    } catch (error) {
+        console.error('❌ Erreur mise à jour graphique compositions:', error);
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (chartContainer) chartContainer.style.display = 'none';
+    }
+}
+
+/**
  * Affiche le tableau détaillé
  */
 /**
@@ -849,9 +1231,20 @@ function renderTable() {
     const thead = document.querySelector('#statsTable thead tr');
     const cardsContainer = document.getElementById('statsCardsContainer');
     
+    console.log('🔍 renderTable appelé:', {
+        tbody: !!tbody,
+        thead: !!thead,
+        cardsContainer: !!cardsContainer,
+        currentStatsLength: currentStats.length
+    });
+    
     if (!tbody || !thead) {
-        console.error('❌ Éléments du tableau introuvables');
+        console.error('❌ Éléments du tableau introuvables', { tbody: !!tbody, thead: !!thead });
         return;
+    }
+    
+    if (!cardsContainer) {
+        console.warn('⚠️ Container cards introuvable');
     }
     
     if (currentStats.length === 0) {
@@ -921,7 +1314,11 @@ function renderTable() {
     
     // Rendre les cards (vue liste principale)
     if (cardsContainer) {
-        renderMobileCards(cardsContainer);
+        // renderMobileCards est async, mais on ne peut pas rendre renderTable async
+        // car elle est appelée depuis updateUI qui est déjà async
+        renderMobileCards(cardsContainer).catch(error => {
+            console.error('❌ Erreur rendu cards:', error);
+        });
     }
 }
 
@@ -954,6 +1351,20 @@ function setupTableSortListeners() {
  * Initialise les graphiques Chart.js
  */
 function setupCharts() {
+    // Détruire les graphiques existants s'ils existent
+    if (barChart) {
+        barChart.destroy();
+        barChart = null;
+    }
+    if (pieChart) {
+        pieChart.destroy();
+        pieChart = null;
+    }
+    if (compositionsChart) {
+        compositionsChart.destroy();
+        compositionsChart = null;
+    }
+    
     // Bar Chart
     const barCtx = document.getElementById('barChart');
     if (!barCtx) {
@@ -1105,6 +1516,12 @@ function setupCharts() {
         return;
     }
     
+    // Vérifier si un graphique existe déjà sur ce canvas et le détruire
+    const existingPieChart = Chart.getChart(pieCtx);
+    if (existingPieChart) {
+        existingPieChart.destroy();
+    }
+    
     pieChart = new Chart(pieCtx.getContext('2d'), {
         type: 'pie',
         data: {
@@ -1141,7 +1558,223 @@ function setupCharts() {
         }
     });
     
+    // Compositions Chart (initialisé mais vide, sera rempli par updateCompositionsChart)
+    const compositionsCtx = document.getElementById('compositionsChart');
+    if (compositionsCtx) {
+        // Détruire le graphique existant s'il existe
+        if (compositionsChart) {
+            compositionsChart.destroy();
+            compositionsChart = null;
+        }
+        
+        // Vérifier si un graphique existe déjà sur ce canvas et le détruire (double vérification)
+        const existingCompositionsChart = Chart.getChart(compositionsCtx);
+        if (existingCompositionsChart) {
+            existingCompositionsChart.destroy();
+        }
+        
+        compositionsChart = new Chart(compositionsCtx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            padding: window.innerWidth < 480 ? 8 : 12,
+                            usePointStyle: true,
+                            font: {
+                                size: window.innerWidth < 480 ? 9 : window.innerWidth < 768 ? 10 : 12
+                            },
+                            boxWidth: window.innerWidth < 480 ? 10 : 12
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: (items) => {
+                                if (!items || items.length === 0) return '';
+                                return `📅 ${items[0].label}`;
+                            },
+                            label: (context) => {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y || 0;
+                                return `${label}: ${value.toLocaleString('fr-FR')} panier(s)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 11
+                            },
+                            maxRotation: window.innerWidth < 480 ? 45 : 0,
+                            minRotation: 0
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: window.innerWidth < 480 ? 8 : window.innerWidth < 768 ? 9 : 11
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+        console.log('✅ Graphique compositions initialisé');
+    }
+    
     console.log('✅ Graphiques Chart.js initialisés');
+}
+
+/**
+ * Met à jour le graphique des compositions par mois
+ */
+async function updateCompositionsChart() {
+    if (!compositionsChart) {
+        console.warn('⚠️ Graphique compositions non initialisé');
+        return;
+    }
+    
+    const emptyState = document.getElementById('compositionsEmptyState');
+    const chartContainer = document.getElementById('compositionsChartContainer');
+    
+    try {
+        // Charger les commandes filtrées
+        let allOrders = [];
+        if (typeof getOrders === 'function') {
+            allOrders = await getOrders();
+        } else {
+            const response = await fetch('https://n8n-seb.sandbox-jerem.com/webhook/orders');
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0 && data[0].data && Array.isArray(data[0].data)) {
+                    allOrders = data[0].data;
+                } else if (data.data && Array.isArray(data.data)) {
+                    allOrders = data.data;
+                } else if (Array.isArray(data)) {
+                    allOrders = data;
+                }
+            }
+        }
+        
+        // Filtrer les commandes selon l'année et le mois sélectionnés
+        const filteredOrders = allOrders.filter(order => {
+            const dateRecup = order.Date_Recuperation || order.date_recuperation || order.DateRecuperation || '';
+            if (!dateRecup) return false;
+            
+            const date = parseOrderDate(dateRecup);
+            if (!date || isNaN(date.getTime())) return false;
+            
+            const orderYear = date.getFullYear();
+            const orderMonth = date.getMonth() + 1;
+            
+            if (orderYear !== currentYear) return false;
+            if (currentMonth !== null && orderMonth !== currentMonth) return false;
+            
+            return true;
+        });
+        
+        if (filteredOrders.length === 0) {
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (chartContainer) chartContainer.style.display = 'none';
+            compositionsChart.data.labels = [];
+            compositionsChart.data.datasets = [];
+            compositionsChart.update('none');
+            return;
+        }
+        
+        if (emptyState) emptyState.classList.add('hidden');
+        if (chartContainer) chartContainer.style.display = 'block';
+        
+        // Grouper par mois et par composition_id
+        const dataByMonth = {};
+        
+        filteredOrders.forEach(order => {
+            const dateRecup = order.Date_Recuperation || order.date_recuperation || order.DateRecuperation || '';
+            const date = parseOrderDate(dateRecup);
+            if (!date) return;
+            
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const moisKey = `${year}-${String(month).padStart(2, '0')}`;
+            
+            const compositionId = order.composition_id || order.compositionId || 'Sans composition';
+            const nombrePaniers = parseInt(order.Nombre_Paniers || order.nombrePaniers || order.nombre_paniers || 1);
+            
+            if (!dataByMonth[moisKey]) {
+                dataByMonth[moisKey] = {};
+            }
+            
+            if (!dataByMonth[moisKey][compositionId]) {
+                dataByMonth[moisKey][compositionId] = 0;
+            }
+            
+            dataByMonth[moisKey][compositionId] += nombrePaniers;
+        });
+        
+        // Trier les mois
+        const sortedMonths = Object.keys(dataByMonth).sort();
+        
+        // Extraire toutes les compositions uniques
+        const allCompositions = new Set();
+        Object.values(dataByMonth).forEach(compositions => {
+            Object.keys(compositions).forEach(compId => allCompositions.add(compId));
+        });
+        
+        const compositionsList = Array.from(allCompositions).sort();
+        
+        // Créer les datasets (un par composition)
+        const datasets = compositionsList.map((compId, index) => {
+            const color = getColorByProductIndex(index, compositionsList.length);
+            
+            return {
+                label: compId,
+                data: sortedMonths.map(mois => dataByMonth[mois][compId] || 0),
+                backgroundColor: color,
+                borderColor: color,
+                borderWidth: 2,
+                borderRadius: 4
+            };
+        });
+        
+        // Créer les labels (noms des mois)
+        const labels = sortedMonths.map(mois => {
+            const [year, month] = mois.split('-');
+            return getMonthName(parseInt(month)) + ' ' + year;
+        });
+        
+        // Mettre à jour le graphique
+        compositionsChart.data.labels = labels;
+        compositionsChart.data.datasets = datasets;
+        compositionsChart.update('active');
+        
+        console.log('✅ Graphique compositions mis à jour:', { labels: labels.length, datasets: datasets.length });
+        
+    } catch (error) {
+        console.error('❌ Erreur mise à jour graphique compositions:', error);
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (chartContainer) chartContainer.style.display = 'none';
+    }
 }
 
 // ===== HELPERS =====

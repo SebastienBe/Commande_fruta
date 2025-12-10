@@ -203,97 +203,167 @@
             </div>
         </section>
         
-        <!-- Section KPI Cards -->
-        <section class="stats-kpi-section" aria-label="Indicateurs clés">
-            <div class="stats-kpi-grid" id="kpiContainer">
-                <!-- Rempli dynamiquement -->
-                <div class="kpi-card" id="kpi-commandes">
-                    <div class="kpi-icon">📦</div>
-                    <div class="kpi-value">-</div>
-                    <div class="kpi-label">Commandes</div>
-                </div>
-                <div class="kpi-card" id="kpi-paniers">
-                    <div class="kpi-icon">🛒</div>
-                    <div class="kpi-value">-</div>
-                    <div class="kpi-label">Nombre panier</div>
-                </div>
-                <div class="kpi-card" id="kpi-fruits">
-                    <div class="kpi-icon">🍊</div>
-                    <div class="kpi-value">-</div>
-                    <div class="kpi-label">Fruits sortis</div>
-                </div>
-                <div class="kpi-card" id="kpi-top">
-                    <div class="kpi-icon">🏆</div>
-                    <div class="kpi-value">-</div>
-                    <div class="kpi-label">Fruit le plus commandé</div>
-                </div>
+        <!-- Section Onglets -->
+        <section class="stats-tabs-section" aria-label="Navigation par onglets">
+            <div class="stats-tabs-container" role="tablist" aria-label="Onglets de visualisation">
+                <button 
+                    type="button"
+                    class="stats-tab active"
+                    id="tabDataviz"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="panelDataviz"
+                    data-tab="dataviz"
+                >
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-label">Dataviz</span>
+                </button>
+                <button 
+                    type="button"
+                    class="stats-tab"
+                    id="tabDetails"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panelDetails"
+                    data-tab="details"
+                >
+                    <span class="tab-icon">📋</span>
+                    <span class="tab-label">Détails</span>
+                </button>
+                <button 
+                    type="button"
+                    class="stats-tab"
+                    id="tabCompositions"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panelCompositions"
+                    data-tab="compositions"
+                >
+                    <span class="tab-icon">🎨</span>
+                    <span class="tab-label">Compositions</span>
+                </button>
             </div>
         </section>
         
-        <!-- Section Graphiques -->
-        <section class="stats-charts-section" aria-label="Graphiques statistiques">
-            <div class="stats-charts-grid">
-                <!-- Bar Chart -->
-                <div class="chart-container">
-                    <h3 class="chart-title">Évolution Mensuelle</h3>
+        <!-- Onglet 1: Dataviz -->
+        <div id="panelDataviz" class="stats-tab-panel active" role="tabpanel" aria-labelledby="tabDataviz">
+            <!-- Section KPI Cards -->
+            <section class="stats-kpi-section" aria-label="Indicateurs clés">
+                <div class="stats-kpi-grid" id="kpiContainer">
+                    <!-- Rempli dynamiquement -->
+                    <div class="kpi-card" id="kpi-commandes">
+                        <div class="kpi-icon">📦</div>
+                        <div class="kpi-value">-</div>
+                        <div class="kpi-label">Commandes</div>
+                    </div>
+                    <div class="kpi-card" id="kpi-paniers">
+                        <div class="kpi-icon">🛒</div>
+                        <div class="kpi-value">-</div>
+                        <div class="kpi-label">Nombre panier</div>
+                    </div>
+                    <div class="kpi-card" id="kpi-fruits">
+                        <div class="kpi-icon">🍊</div>
+                        <div class="kpi-value">-</div>
+                        <div class="kpi-label">Fruits sortis</div>
+                    </div>
+                    <div class="kpi-card" id="kpi-top">
+                        <div class="kpi-icon">🏆</div>
+                        <div class="kpi-value">-</div>
+                        <div class="kpi-label">Fruit le plus commandé</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section Graphiques -->
+            <section class="stats-charts-section" aria-label="Graphiques statistiques">
+                <div class="stats-charts-grid">
+                    <!-- Bar Chart -->
+                    <div class="chart-container">
+                        <h3 class="chart-title">Évolution Mensuelle</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="barChart" aria-label="Graphique en barres empilées de l'évolution mensuelle des fruits"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Pie Chart -->
+                    <div class="chart-container">
+                        <h3 class="chart-title">Répartition des Fruits</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="pieChart" aria-label="Graphique en camembert de la répartition des fruits"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <!-- Onglet 2: Détails Mensuels -->
+        <div id="panelDetails" class="stats-tab-panel" role="tabpanel" aria-labelledby="tabDetails">
+            <section class="stats-table-section" aria-label="Tableau détaillé des statistiques">
+                <div class="stats-table-header">
+                    <h3 class="section-title">Détails Mensuels</h3>
+                    <button 
+                        type="button" 
+                        id="btnExportCSV" 
+                        class="btn btn-secondary"
+                        aria-label="Exporter en CSV"
+                    >
+                        <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Exporter CSV
+                    </button>
+                </div>
+                
+                <!-- Vue Tableau (Desktop) - Masquée, on utilise uniquement la liste -->
+                <div class="stats-table-wrapper desktop-view" style="display: none;">
+                    <table id="statsTable" class="stats-table" role="table" aria-label="Tableau détaillé des statistiques mensuelles">
+                        <thead>
+                            <tr></tr>
+                        </thead>
+                        <tbody id="statsTableBody">
+                            <!-- Rempli dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Vue Cards (Mobile) -->
+                <div id="statsCardsContainer" class="stats-cards-container mobile-view">
+                    <!-- Rempli dynamiquement -->
+                </div>
+                
+                <!-- Empty State -->
+                <div id="statsEmptyState" class="empty-state hidden">
+                    <div class="empty-state-icon">📊</div>
+                    <h3 class="empty-state-title">Aucune statistique disponible</h3>
+                    <p class="empty-state-text">Sélectionnez une autre année ou mois, ou recalculez les statistiques.</p>
+                </div>
+            </section>
+        </div>
+        
+        <!-- Onglet 3: Compositions par Mois -->
+        <div id="panelCompositions" class="stats-tab-panel" role="tabpanel" aria-labelledby="tabCompositions">
+            <section class="stats-compositions-section" aria-label="Compositions vendues par mois">
+                <div class="stats-compositions-header">
+                    <h3 class="section-title">Paniers par Composition</h3>
+                    <p class="section-description">Nombre de paniers vendus pour chaque composition par mois</p>
+                </div>
+                
+                <div id="compositionsChartContainer" class="compositions-chart-container">
                     <div class="chart-wrapper">
-                        <canvas id="barChart" aria-label="Graphique en barres empilées de l'évolution mensuelle des fruits"></canvas>
+                        <canvas id="compositionsChart" aria-label="Histogramme des compositions vendues par mois"></canvas>
                     </div>
                 </div>
                 
-                <!-- Pie Chart -->
-                <div class="chart-container">
-                    <h3 class="chart-title">Répartition des Fruits</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="pieChart" aria-label="Graphique en camembert de la répartition des fruits"></canvas>
-                    </div>
+                <!-- Empty State -->
+                <div id="compositionsEmptyState" class="empty-state hidden">
+                    <div class="empty-state-icon">🎨</div>
+                    <h3 class="empty-state-title">Aucune donnée de composition disponible</h3>
+                    <p class="empty-state-text">Les données seront affichées une fois les statistiques calculées.</p>
                 </div>
-            </div>
-        </section>
-        
-        <!-- Section Tableau -->
-        <section class="stats-table-section" aria-label="Tableau détaillé des statistiques">
-            <div class="stats-table-header">
-                <h3 class="section-title">Détails Mensuels</h3>
-                <button 
-                    type="button" 
-                    id="btnExportCSV" 
-                    class="btn btn-secondary"
-                    aria-label="Exporter en CSV"
-                >
-                    <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    Exporter CSV
-                </button>
-            </div>
-            
-            <!-- Vue Tableau (Desktop) - Masquée, on utilise uniquement la liste -->
-            <div class="stats-table-wrapper desktop-view" style="display: none;">
-                <table id="statsTable" class="stats-table" role="table" aria-label="Tableau détaillé des statistiques mensuelles">
-                    <thead>
-                        <tr></tr>
-                    </thead>
-                    <tbody id="statsTableBody">
-                        <!-- Rempli dynamiquement -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Vue Cards (Mobile) -->
-            <div id="statsCardsContainer" class="stats-cards-container mobile-view">
-                <!-- Rempli dynamiquement -->
-            </div>
-            
-            <!-- Empty State -->
-            <div id="statsEmptyState" class="empty-state hidden">
-                <div class="empty-state-icon">📊</div>
-                <h3 class="empty-state-title">Aucune statistique disponible</h3>
-                <p class="empty-state-text">Sélectionnez une autre année ou mois, ou recalculez les statistiques.</p>
-            </div>
-        </section>
+            </section>
+        </div>
         
     </main>
     
